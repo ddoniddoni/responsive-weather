@@ -41,23 +41,71 @@ body {
 }
 
 .weather-button .weather-rain {
-  opacity: 0.6;
-  background-image: repeating-linear-gradient(
-    -24deg,
-    transparent 0,
-    transparent 10px,
-    rgba(147, 197, 253, 0.55) 10px,
-    rgba(147, 197, 253, 0.55) 12px
-  );
-  animation: weather-rain-flow 900ms linear infinite;
   pointer-events: none;
 }
 
-@keyframes weather-rain-flow {
+.weather-button .weather-rain-drop {
+  position: absolute;
+  top: -8px;
+  width: 2px;
+  height: 10px;
+  border-radius: 9999px;
+  background: rgba(125, 211, 252, 0.8);
+  animation: weather-rain-fall 900ms linear infinite;
+}
+
+.weather-button .weather-rain-drop-1 {
+  left: 18%;
+  animation-delay: -180ms;
+}
+
+.weather-button .weather-rain-drop-2 {
+  left: 38%;
+  animation-delay: -500ms;
+}
+
+.weather-button .weather-rain-drop-3 {
+  left: 62%;
+  animation-delay: -100ms;
+}
+
+.weather-button .weather-rain-drop-4 {
+  left: 82%;
+  animation-delay: -360ms;
+}
+
+.weather-button .weather-cloud {
+  pointer-events: none;
+  opacity: 0.6;
+  background:
+    radial-gradient(circle at 20% 58%, rgba(226, 232, 240, 0.42) 0 14px, transparent 15px),
+    radial-gradient(circle at 40% 52%, rgba(226, 232, 240, 0.42) 0 16px, transparent 17px),
+    radial-gradient(circle at 65% 58%, rgba(226, 232, 240, 0.42) 0 14px, transparent 15px);
+  animation: weather-cloud-drift 3s ease-in-out infinite;
+}
+
+@keyframes weather-rain-fall {
   from {
-    background-position: 0 0;
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
   }
   to {
-    background-position: 0 24px;
+    transform: translateY(28px);
+    opacity: 0;
+  }
+}
+
+@keyframes weather-cloud-drift {
+  0% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  100% {
+    transform: translateX(-4px);
   }
 }
