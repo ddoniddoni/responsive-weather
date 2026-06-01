@@ -152,8 +152,47 @@ body {
   }
 }
 
+.weather-map-stage {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.92) 0 17%, rgba(236, 253, 245, 0.26) 32%, transparent 58%),
+    linear-gradient(140deg, #e0f7fa 0%, #eefdf8 42%, #dbeafe 100%);
+}
+
+html.dark .weather-map-stage {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(186, 230, 253, 0.22) 0 17%, rgba(20, 184, 166, 0.12) 32%, transparent 58%),
+    linear-gradient(140deg, #082f49 0%, #0f172a 50%, #052e2b 100%);
+}
+
+.weather-map-aurora {
+  position: absolute;
+  inset: -18% -10%;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(45, 212, 191, 0.24), transparent 28%),
+    radial-gradient(circle at 80% 72%, rgba(125, 211, 252, 0.24), transparent 30%);
+  filter: blur(18px);
+  opacity: 0.9;
+}
+
+.weather-map-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(14, 116, 144, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 116, 144, 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at center, black 0 52%, transparent 74%);
+}
+
+.weather-country-label {
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
 .weather-globe-marker .weather-globe-shadow {
-  fill: rgba(15, 23, 42, 0.25);
+  fill: rgba(8, 47, 73, 0.18);
 }
 
 .weather-globe-marker .weather-globe-sun circle {

@@ -3,13 +3,14 @@
 import { geoCentroid } from "d3-geo";
 import { useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
-import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
+import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from "react-simple-maps";
 
 import { WeatherConditionMarker } from "@/components/map/weather-condition-marker";
 import type { WeatherCondition } from "@/types/weather";
 import type { SelectedCountry } from "@/types/weather-data";
 
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
 
 type WorldMapProps = {
   selectedCountryCode: string | null;
@@ -40,10 +41,8 @@ export function WorldMap({
   const [isDragging, setIsDragging] = useState(false);
   const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
   const [selectedCountryLabel, setSelectedCountryLabel] = useState<string | null>(null);
+  const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const selectedCountryCoordinatesRef = useRef<[number, number] | null>(null);
-
-  const selectedMarkerCoordinates = selectedCountryCoordinatesRef.current;
 
   function handleZoomIn() {
     applyScaleDelta(20);
@@ -96,14 +95,18 @@ export function WorldMap({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-      <div className="mb-2 flex h-6 items-center">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-          {hoveredCountryName ?? selectedCountryLabel ?? "국가 위에 마우스를 올려 이름을 확인하세요."}
+    <div className="overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-[0_20px_60px_rgba(12,74,110,0.12)] dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex h-12 items-center justify-between border-b border-cyan-100 bg-gradient-to-r from-cyan-50 via-white to-emerald-50 px-4 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950">
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">
+          {hoveredCountryName ?? selectedCountryLabel ?? "지도에서 국가를 선택하세요"}
         </p>
+        <span className="hidden text-xs font-medium text-cyan-700 dark:text-cyan-200 sm:inline">
+          Interactive Globe
+        </span>
       </div>
+
       <div
-        className={`relative h-[56vh] min-h-[320px] max-h-[620px] w-full overflow-hidden rounded-xl ${
+        className={`weather-map-stage relative h-[56vh] min-h-[320px] max-h-[620px] w-full overflow-hidden ${
           isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
         onPointerDown={handlePointerDown}
@@ -112,24 +115,46 @@ export function WorldMap({
         onPointerLeave={handlePointerUp}
         onWheel={handleWheel}
       >
+        <div className="weather-map-aurora" aria-hidden="true" />
+        <div className="weather-map-grid" aria-hidden="true" />
+
         <ComposableMap
           projection="geoOrthographic"
           projectionConfig={{ scale, rotate: rotation }}
-          className="h-full w-full"
+          className="relative z-10 h-full w-full drop-shadow-[0_24px_32px_rgba(8,47,73,0.32)]"
           aria-label="World map"
         >
+          <defs>
+            <radialGradient id="globeOceanGradient" cx="38%" cy="30%" r="68%">
+              <stop offset="0%" stopColor="#dff9ff" />
+              <stop offset="42%" stopColor="#6bd3f3" />
+              <stop offset="78%" stopColor="#1679a7" />
+              <stop offset="100%" stopColor="#075985" />
+            </radialGradient>
+            <radialGradient id="globeShadeGradient" cx="34%" cy="26%" r="74%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
+              <stop offset="58%" stopColor="rgba(255,255,255,0)" />
+              <stop offset="100%" stopColor="rgba(15,23,42,0.34)" />
+            </radialGradient>
+          </defs>
+
+          <Sphere
+            id="globe-ocean"
+            fill="url(#globeOceanGradient)"
+            stroke="rgba(224,242,254,0.9)"
+            strokeWidth={0.8}
+          />
+          <Graticule stroke="rgba(240,249,255,0.32)" strokeWidth={0.35} />
+
           <Geographies geography={WORLD_GEO_URL}>
             {({ geographies }) =>
-              geographies.map((geography) => {
+              geographies.map((geography, index) => {
                 const feature = geography as GeographyFeature;
                 const countryName = feature.properties.name ?? feature.properties.NAME ?? "Unknown";
                 const countryCode = feature.properties.iso_a3 ?? feature.properties.ISO_A3 ?? "UNK";
                 const isSelected = selectedCountryCode === countryCode;
                 const centroid = geoCentroid(feature as never) as [number, number];
-
-                if (isSelected) {
-                  selectedCountryCoordinatesRef.current = centroid;
-                }
+                const defaultFill = LAND_COLORS[index % LAND_COLORS.length];
 
                 return (
                   <Geography
@@ -139,25 +164,25 @@ export function WorldMap({
                     onMouseLeave={() => setHoveredCountryName(null)}
                     onClick={() => {
                       setSelectedCountryLabel(countryName);
-                      selectedCountryCoordinatesRef.current = centroid;
+                      setSelectedMarkerCoordinates(centroid);
                       onSelectCountry({ code: countryCode, name: countryName });
                     }}
-                    className="cursor-pointer outline-none"
+                    className="cursor-pointer outline-none transition-colors"
                     style={{
                       default: {
-                        fill: isSelected ? "#60a5fa" : "#dbeafe",
-                        stroke: "#94a3b8",
+                        fill: isSelected ? "#facc15" : defaultFill,
+                        stroke: "rgba(255,255,255,0.78)",
                         strokeWidth: 0.5,
                       },
                       hover: {
-                        fill: "#93c5fd",
-                        stroke: "#64748b",
-                        strokeWidth: 0.6,
+                        fill: "#fde68a",
+                        stroke: "#ffffff",
+                        strokeWidth: 0.9,
                       },
                       pressed: {
-                        fill: "#3b82f6",
-                        stroke: "#475569",
-                        strokeWidth: 0.6,
+                        fill: "#f59e0b",
+                        stroke: "#ffffff",
+                        strokeWidth: 0.9,
                       },
                     }}
                   />
@@ -165,17 +190,26 @@ export function WorldMap({
               })
             }
           </Geographies>
+
+          <Sphere
+            id="globe-shade"
+            fill="url(#globeShadeGradient)"
+            stroke="rgba(255,255,255,0.22)"
+            strokeWidth={0.8}
+          />
+
           {selectedCountryCode && selectedMarkerCoordinates ? (
             <Marker coordinates={selectedMarkerCoordinates}>
               <text
-                y={-16}
+                y={-18}
                 textAnchor="middle"
-                className="fill-slate-800 text-[10px] font-semibold dark:fill-slate-100"
+                className="weather-country-label fill-slate-900 text-[10px] font-bold dark:fill-white"
               >
                 {selectedCountryLabel}
               </text>
             </Marker>
           ) : null}
+
           {selectedMarkerCoordinates && selectedWeatherCondition ? (
             <WeatherConditionMarker
               condition={selectedWeatherCondition}
@@ -183,12 +217,13 @@ export function WorldMap({
             />
           ) : null}
         </ComposableMap>
-        <div className="absolute right-2 top-2 flex gap-2">
+
+        <div className="absolute right-2 top-2 z-20 flex gap-2">
           <button
             type="button"
             onClick={handleZoomIn}
             aria-label="지도 확대"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-900 shadow-sm hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/70 bg-white/90 text-slate-900 shadow-sm backdrop-blur hover:bg-white dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-800"
           >
             +
           </button>
@@ -196,7 +231,7 @@ export function WorldMap({
             type="button"
             onClick={handleZoomOut}
             aria-label="지도 축소"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-900 shadow-sm hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/70 bg-white/90 text-slate-900 shadow-sm backdrop-blur hover:bg-white dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-800"
           >
             -
           </button>
@@ -204,13 +239,14 @@ export function WorldMap({
             type="button"
             onClick={handleResetView}
             aria-label="지도 초기 위치로 이동"
-            className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-900 shadow-sm hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            className="inline-flex h-8 items-center justify-center rounded-md border border-white/70 bg-white/90 px-2 text-xs text-slate-900 shadow-sm backdrop-blur hover:bg-white dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-800"
           >
             Reset
           </button>
         </div>
       </div>
-      <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+
+      <p className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
         Drag to rotate, use +/- or wheel to zoom, and click a country for details.
       </p>
     </div>

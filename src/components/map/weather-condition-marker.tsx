@@ -8,6 +8,10 @@ type WeatherConditionMarkerProps = {
 };
 
 export function WeatherConditionMarker({ condition, coordinates }: WeatherConditionMarkerProps) {
+  if (condition === "unknown") {
+    return null;
+  }
+
   return (
     <Marker coordinates={coordinates}>
       <g className="weather-globe-marker">
