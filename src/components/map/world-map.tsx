@@ -191,18 +191,18 @@ export function WorldMap({
                     style={{
                       default: {
                         fill: defaultFill,
-                        stroke: isSelected ? "#facc15" : "rgba(255,255,255,0.78)",
-                        strokeWidth: isSelected ? 1.4 : 0.5,
+                        stroke: isSelected ? "#111827" : "rgba(14, 116, 144, 0.62)",
+                        strokeWidth: isSelected ? 1.8 : 0.75,
                       },
                       hover: {
                         fill: "#fde68a",
-                        stroke: "#ffffff",
-                        strokeWidth: 0.9,
+                        stroke: "#0f172a",
+                        strokeWidth: 1.1,
                       },
                       pressed: {
                         fill: "#f59e0b",
-                        stroke: "#ffffff",
-                        strokeWidth: 0.9,
+                        stroke: "#0f172a",
+                        strokeWidth: 1.2,
                       },
                     }}
                   />
