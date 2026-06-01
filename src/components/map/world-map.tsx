@@ -13,8 +13,8 @@ const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m
 const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
 const DEFAULT_SCALE = 220;
 const MIN_SCALE = 160;
-const MAX_SCALE = 820;
-const ZOOM_STEP = 40;
+const MAX_SCALE = 1200;
+const ZOOM_STEP = 60;
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
@@ -228,9 +228,9 @@ export function WorldMap({
           {selectedCountryCode && selectedMarkerCoordinates ? (
             <Marker coordinates={selectedMarkerCoordinates}>
               <g className="weather-country-popout-anchor">
-                <line x1="0" y1="-6" x2="0" y2="-26" className="weather-country-popout-line" />
+                <line x1="0" y1="-6" x2="0" y2="-30" className="weather-country-popout-line" />
                 <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot" />
-                <foreignObject x="-78" y="-72" width="156" height="44" className="overflow-visible">
+                <foreignObject x="-104" y="-86" width="208" height="54" className="overflow-visible">
                   <div className="weather-country-popout">
                     <span>{selectedCountryLabel}</span>
                   </div>
