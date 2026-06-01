@@ -184,11 +184,59 @@ html.dark .weather-map-stage {
   mask-image: radial-gradient(circle at center, black 0 52%, transparent 74%);
 }
 
-.weather-country-label {
-  paint-order: stroke;
-  stroke: rgba(255, 255, 255, 0.92);
-  stroke-width: 3px;
-  stroke-linejoin: round;
+.weather-country-popout-anchor {
+  pointer-events: none;
+  animation: country-popout-enter 420ms cubic-bezier(0.2, 1.4, 0.34, 1) both;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.weather-country-popout {
+  display: flex;
+  width: 148px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(224, 242, 254, 0.92));
+  box-shadow:
+    0 10px 18px rgba(8, 47, 73, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  transform: perspective(80px) rotateX(8deg);
+}
+
+.weather-country-popout span {
+  max-width: 126px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weather-country-popout-line {
+  stroke: rgba(250, 204, 21, 0.95);
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+.weather-country-popout-dot {
+  fill: #facc15;
+  stroke: #ffffff;
+  stroke-width: 1.2;
+  filter: drop-shadow(0 2px 3px rgba(8, 47, 73, 0.28));
+}
+
+html.dark .weather-country-popout {
+  border-color: rgba(103, 232, 249, 0.45);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(8, 47, 73, 0.92));
+  color: #f8fafc;
+  box-shadow:
+    0 12px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .weather-globe-marker .weather-globe-shadow {
@@ -255,5 +303,20 @@ html.dark .weather-map-stage {
   100% {
     opacity: 0.15;
     transform: translateY(3px);
+  }
+}
+
+@keyframes country-popout-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.72);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

@@ -11,6 +11,17 @@ import type { SelectedCountry } from "@/types/weather-data";
 
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
+const DEFAULT_SCALE = 220;
+const MIN_SCALE = 160;
+const MAX_SCALE = 820;
+const ZOOM_STEP = 40;
+
+const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
+  France: "FRA",
+  Japan: "JPN",
+  "South Korea": "KOR",
+  "United States of America": "USA",
+};
 
 type WorldMapProps = {
   selectedCountryCode: string | null;
@@ -27,16 +38,26 @@ type GeographyProperties = {
 
 type GeographyFeature = {
   rsmKey: string;
+  id?: string | number;
   properties: GeographyProperties;
   geometry: unknown;
 };
+
+function getCountryCode(feature: GeographyFeature, countryName: string) {
+  return (
+    feature.properties.iso_a3 ??
+    feature.properties.ISO_A3 ??
+    MOCK_WEATHER_COUNTRY_CODES[countryName] ??
+    String(feature.id ?? feature.rsmKey)
+  );
+}
 
 export function WorldMap({
   selectedCountryCode,
   selectedWeatherCondition,
   onSelectCountry,
 }: WorldMapProps) {
-  const [scale, setScale] = useState(220);
+  const [scale, setScale] = useState(DEFAULT_SCALE);
   const [rotation, setRotation] = useState<[number, number, number]>([0, -15, 0]);
   const [isDragging, setIsDragging] = useState(false);
   const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
@@ -45,20 +66,20 @@ export function WorldMap({
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
 
   function handleZoomIn() {
-    applyScaleDelta(20);
+    applyScaleDelta(ZOOM_STEP);
   }
 
   function handleZoomOut() {
-    applyScaleDelta(-20);
+    applyScaleDelta(-ZOOM_STEP);
   }
 
   function handleResetView() {
-    setScale(220);
+    setScale(DEFAULT_SCALE);
     setRotation([0, -15, 0]);
   }
 
   function applyScaleDelta(delta: number) {
-    setScale((previousScale) => Math.max(160, Math.min(520, previousScale + delta)));
+    setScale((previousScale) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, previousScale + delta)));
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -90,8 +111,7 @@ export function WorldMap({
 
   function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
     event.preventDefault();
-    const zoomDelta = event.deltaY < 0 ? 20 : -20;
-    applyScaleDelta(zoomDelta);
+    applyScaleDelta(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
   }
 
   return (
@@ -151,7 +171,7 @@ export function WorldMap({
               geographies.map((geography, index) => {
                 const feature = geography as GeographyFeature;
                 const countryName = feature.properties.name ?? feature.properties.NAME ?? "Unknown";
-                const countryCode = feature.properties.iso_a3 ?? feature.properties.ISO_A3 ?? "UNK";
+                const countryCode = getCountryCode(feature, countryName);
                 const isSelected = selectedCountryCode === countryCode;
                 const centroid = geoCentroid(feature as never) as [number, number];
                 const defaultFill = LAND_COLORS[index % LAND_COLORS.length];
@@ -170,9 +190,9 @@ export function WorldMap({
                     className="cursor-pointer outline-none transition-colors"
                     style={{
                       default: {
-                        fill: isSelected ? "#facc15" : defaultFill,
-                        stroke: "rgba(255,255,255,0.78)",
-                        strokeWidth: 0.5,
+                        fill: defaultFill,
+                        stroke: isSelected ? "#facc15" : "rgba(255,255,255,0.78)",
+                        strokeWidth: isSelected ? 1.4 : 0.5,
                       },
                       hover: {
                         fill: "#fde68a",
@@ -198,23 +218,25 @@ export function WorldMap({
             strokeWidth={0.8}
           />
 
-          {selectedCountryCode && selectedMarkerCoordinates ? (
-            <Marker coordinates={selectedMarkerCoordinates}>
-              <text
-                y={-18}
-                textAnchor="middle"
-                className="weather-country-label fill-slate-900 text-[10px] font-bold dark:fill-white"
-              >
-                {selectedCountryLabel}
-              </text>
-            </Marker>
-          ) : null}
-
           {selectedMarkerCoordinates && selectedWeatherCondition ? (
             <WeatherConditionMarker
               condition={selectedWeatherCondition}
               coordinates={selectedMarkerCoordinates}
             />
+          ) : null}
+
+          {selectedCountryCode && selectedMarkerCoordinates ? (
+            <Marker coordinates={selectedMarkerCoordinates}>
+              <g className="weather-country-popout-anchor">
+                <line x1="0" y1="-6" x2="0" y2="-26" className="weather-country-popout-line" />
+                <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot" />
+                <foreignObject x="-78" y="-72" width="156" height="44" className="overflow-visible">
+                  <div className="weather-country-popout">
+                    <span>{selectedCountryLabel}</span>
+                  </div>
+                </foreignObject>
+              </g>
+            </Marker>
           ) : null}
         </ComposableMap>
 
