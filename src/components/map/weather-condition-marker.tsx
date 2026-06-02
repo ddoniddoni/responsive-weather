@@ -14,7 +14,7 @@ export function WeatherConditionMarker({ condition, coordinates }: WeatherCondit
 
   return (
     <Marker coordinates={coordinates}>
-      <g className="weather-globe-marker">
+      <g className="weather-globe-marker pointer-events-none" aria-hidden="true">
         <ellipse cx="0" cy="14" rx="18" ry="6" className="weather-globe-shadow" />
         {condition === "sunny" ? (
           <g className="weather-globe-sun">

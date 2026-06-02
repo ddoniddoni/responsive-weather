@@ -16,8 +16,9 @@ const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m
 const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
 const DEFAULT_SCALE = 220;
 const MIN_SCALE = 160;
-const MAX_SCALE = 1200;
-const FOCUSED_SCALE = 440;
+const MAX_SCALE = 1800;
+const FOCUSED_SCALE = 520;
+const REGION_FOCUSED_SCALE = 1020;
 const ZOOM_STEP = 60;
 const FOCUS_ANIMATION_DURATION = 420;
 
@@ -26,6 +27,12 @@ const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   Japan: "JPN",
   "South Korea": "KOR",
   "United States of America": "USA",
+};
+
+const FOCUSED_SCALE_BY_COUNTRY_CODE: Record<string, number> = {
+  FRA: 620,
+  JPN: 920,
+  KOR: 1080,
 };
 
 type WorldMapProps = {
@@ -74,6 +81,10 @@ function getShortestAngleDelta(from: number, to: number) {
 
 function easeOutCubic(progress: number) {
   return 1 - (1 - progress) ** 3;
+}
+
+function getFocusedScale(countryCode: string) {
+  return FOCUSED_SCALE_BY_COUNTRY_CODE[countryCode] ?? FOCUSED_SCALE;
 }
 
 function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
@@ -197,10 +208,10 @@ export function WorldMap({
     applyScaleDelta(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
   }
 
-  function focusCountry(centroid: [number, number]) {
+  function focusCoordinates(coordinates: [number, number], targetScale: number) {
     cancelFocusAnimation();
 
-    const [longitude, latitude] = centroid;
+    const [longitude, latitude] = coordinates;
     const fromRotation = rotation;
     const targetRotation: [number, number, number] = [
       -longitude,
@@ -208,7 +219,7 @@ export function WorldMap({
       fromRotation[2],
     ];
     const fromScale = scale;
-    const targetScale = Math.max(FOCUSED_SCALE, fromScale);
+    const nextScale = Math.max(targetScale, fromScale);
     const startedAt = window.performance.now();
     const longitudeDelta = getShortestAngleDelta(fromRotation[0], targetRotation[0]);
     const latitudeDelta = targetRotation[1] - fromRotation[1];
@@ -222,7 +233,7 @@ export function WorldMap({
         fromRotation[1] + latitudeDelta * easedProgress,
         fromRotation[2],
       ]);
-      setScale(fromScale + (targetScale - fromScale) * easedProgress);
+      setScale(fromScale + (nextScale - fromScale) * easedProgress);
 
       if (progress < 1) {
         focusAnimationRef.current = window.requestAnimationFrame(animate);
@@ -235,9 +246,14 @@ export function WorldMap({
     focusAnimationRef.current = window.requestAnimationFrame(animate);
   }
 
+  function focusCountry(centroid: [number, number], countryCode: string) {
+    focusCoordinates(centroid, getFocusedScale(countryCode));
+  }
+
   function handleSelectRegion(region: SelectedRegion) {
     setSelectedCountryLabel(region.regionName);
     setSelectedMarkerCoordinates(region.coordinates);
+    focusCoordinates(region.coordinates, REGION_FOCUSED_SCALE);
     onSelectRegion(region);
   }
 
@@ -313,7 +329,7 @@ export function WorldMap({
                       onClick={() => {
                         setSelectedCountryLabel(countryName);
                         setSelectedMarkerCoordinates(centroid);
-                        focusCountry(centroid);
+                        focusCountry(centroid, countryCode);
                         onSelectCountry({ code: countryCode, name: countryName });
                       }}
                       className="cursor-pointer outline-none transition-colors"
@@ -353,6 +369,7 @@ export function WorldMap({
               fill="url(#globeShadeGradient)"
               stroke="rgba(255,255,255,0.22)"
               strokeWidth={0.8}
+              className="pointer-events-none"
             />
 
             {selectedMarkerCoordinates && selectedWeatherCondition ? (
@@ -364,7 +381,7 @@ export function WorldMap({
 
             {selectedCountryCode && selectedMarkerCoordinates ? (
               <Marker coordinates={selectedMarkerCoordinates}>
-                <g className="weather-country-popout-anchor">
+                <g className="weather-country-popout-anchor pointer-events-none" aria-hidden="true">
                   <line x1="0" y1="-6" x2="0" y2="-30" className="weather-country-popout-line" />
                   <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot" />
                   <foreignObject x="-104" y="-86" width="208" height="54" className="overflow-visible">

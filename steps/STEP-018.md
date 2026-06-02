@@ -12,6 +12,8 @@
 - Keep shared GeoJSON parsing and boundary label helpers client-safe.
 - Update the client hook to call `/api/admin-boundaries`.
 - Reduce technical map status text so ADM1 implementation details are not shown as primary UI.
+- Fix selected-country marker overlays so they do not block regional boundary clicks.
+- Increase focus scale for small countries where ADM1 regions need more room.
 
 ## Completion Criteria
 
@@ -19,6 +21,8 @@
 - Supported countries render regional boundaries without browser CORS or redirect failures.
 - Unsupported or failed requests show a user-readable fallback status.
 - Existing region click behavior still updates the weather detail panel.
+- Korea can be selected at a scale where multiple regional boundaries are reachable.
+- Decorative map markers and shade layers do not block country or region clicks.
 - `npm run lint` and `npm run build` pass.
 
 ## Checklist
@@ -30,5 +34,7 @@
 - [x] Update client hook to use same-origin route
 - [x] Polish map boundary status labels
 - [x] Align weather metric card accent dots with labels
+- [x] Prevent decorative map markers from intercepting clicks
+- [x] Increase Korea/Japan focus scale for regional selection
 - [x] Verify lint/build
 - [x] Commit and push Step 018 branch

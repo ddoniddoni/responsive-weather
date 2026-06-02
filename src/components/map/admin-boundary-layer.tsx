@@ -1,5 +1,5 @@
 import { geoCentroid } from "d3-geo";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import { Geographies, Geography } from "react-simple-maps";
 
 import { getAdminBoundaryCode, getAdminBoundaryName } from "@/lib/map/admin-boundaries";
@@ -43,6 +43,11 @@ export function AdminBoundaryLayer({
     });
   }
 
+  function handleRegionClick(event: MouseEvent<SVGPathElement>, feature: RenderedAdminBoundary) {
+    event.stopPropagation();
+    selectRegion(feature);
+  }
+
   function handleRegionKeyDown(event: KeyboardEvent<SVGPathElement>, feature: RenderedAdminBoundary) {
     if (event.key !== "Enter" && event.key !== " ") {
       return;
@@ -68,7 +73,7 @@ export function AdminBoundaryLayer({
               aria-label={boundaryName}
               role="button"
               tabIndex={0}
-              onClick={() => selectRegion(feature)}
+              onClick={(event) => handleRegionClick(event, feature)}
               onKeyDown={(event) => handleRegionKeyDown(event, feature)}
               className="cursor-pointer outline-none transition-colors"
               style={{
