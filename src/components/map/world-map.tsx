@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from "react-simple-maps";
 
+import { AdminBoundaryLayer } from "@/components/map/admin-boundary-layer";
 import { WeatherConditionMarker } from "@/components/map/weather-condition-marker";
+import { useAdminBoundaries } from "@/hooks/use-admin-boundaries";
+import type { AdminBoundaryLoadStatus } from "@/types/admin-boundary";
 import type { WeatherCondition } from "@/types/weather";
 import type { SelectedCountry } from "@/types/weather-data";
 
@@ -70,11 +73,24 @@ function easeOutCubic(progress: number) {
   return 1 - (1 - progress) ** 3;
 }
 
+function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
+  const labelMap: Record<AdminBoundaryLoadStatus, string | null> = {
+    idle: null,
+    loading: "Loading ADM1 boundaries",
+    success: "ADM1 boundaries visible",
+    error: "ADM1 boundaries unavailable",
+    unsupported: "ADM1 boundaries not supported",
+  };
+
+  return labelMap[status];
+}
+
 export function WorldMap({
   selectedCountryCode,
   selectedWeatherCondition,
   onSelectCountry,
 }: WorldMapProps) {
+  const { boundaries, status: adminBoundaryStatus } = useAdminBoundaries(selectedCountryCode);
   const [scale, setScale] = useState(DEFAULT_SCALE);
   const [rotation, setRotation] = useState<[number, number, number]>([0, -15, 0]);
   const [isDragging, setIsDragging] = useState(false);
@@ -83,6 +99,7 @@ export function WorldMap({
   const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const focusAnimationRef = useRef<number | null>(null);
+  const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
 
   useEffect(() => {
     return () => {
@@ -291,6 +308,8 @@ export function WorldMap({
             }
           </Geographies>
 
+          <AdminBoundaryLayer boundaries={boundaries} />
+
           <Sphere
             id="globe-shade"
             fill="url(#globeShadeGradient)"
@@ -346,11 +365,33 @@ export function WorldMap({
             Reset
           </button>
         </div>
+
+        {adminBoundaryStatusLabel ? (
+          <div
+            role="status"
+            className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-white/75 bg-white/90 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-600 dark:bg-slate-900/86 dark:text-slate-100"
+          >
+            {adminBoundaryStatusLabel}
+          </div>
+        ) : null}
       </div>
 
-      <p className="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
-        Drag to rotate, use +/- or wheel to zoom, and click a country for details.
-      </p>
+      <div className="flex flex-col gap-1 px-4 py-3 text-xs text-slate-600 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+        <p>Drag to rotate, use +/- or wheel to zoom, and click a country for details.</p>
+        {selectedCountryCode ? (
+          <p>
+            ADM1 data:{" "}
+            <a
+              href="https://www.geoboundaries.org/"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-cyan-700 underline-offset-2 hover:underline dark:text-cyan-200"
+            >
+              geoBoundaries gbOpen
+            </a>
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }
