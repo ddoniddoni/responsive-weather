@@ -3,6 +3,13 @@ import type {
   AdminBoundaryFeatureCollection,
 } from "@/types/admin-boundary";
 
+export type AdminBoundaryBounds = {
+  minLongitude: number;
+  maxLongitude: number;
+  minLatitude: number;
+  maxLatitude: number;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -110,4 +117,41 @@ export function getAdminBoundaryCenter(feature: AdminBoundaryFeature): [number, 
   }
 
   return [(minLongitude + maxLongitude) / 2, (minLatitude + maxLatitude) / 2];
+}
+
+export function getAdminBoundaryCollectionBounds(
+  collection: AdminBoundaryFeatureCollection,
+): AdminBoundaryBounds | null {
+  const positions: Array<[number, number]> = [];
+
+  for (const feature of collection.features) {
+    if (!isRecord(feature.geometry) || !("coordinates" in feature.geometry)) {
+      continue;
+    }
+
+    collectCoordinatePositions(feature.geometry.coordinates, positions);
+  }
+
+  if (positions.length === 0) {
+    return null;
+  }
+
+  let minLongitude = positions[0][0];
+  let maxLongitude = positions[0][0];
+  let minLatitude = positions[0][1];
+  let maxLatitude = positions[0][1];
+
+  for (const [longitude, latitude] of positions) {
+    minLongitude = Math.min(minLongitude, longitude);
+    maxLongitude = Math.max(maxLongitude, longitude);
+    minLatitude = Math.min(minLatitude, latitude);
+    maxLatitude = Math.max(maxLatitude, latitude);
+  }
+
+  return {
+    minLongitude,
+    maxLongitude,
+    minLatitude,
+    maxLatitude,
+  };
 }

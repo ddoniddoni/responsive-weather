@@ -43,7 +43,7 @@ export async function fetchAdminBoundaries(
 
   const metadata = parseGeoBoundariesMetadata(await metadataResponse.json());
   const boundaryResponse = await fetch(metadata.gjDownloadURL, {
-    next: { revalidate: ADMIN_BOUNDARY_REVALIDATE_SECONDS },
+    cache: "no-store",
   });
 
   if (!boundaryResponse.ok) {

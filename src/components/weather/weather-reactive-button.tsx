@@ -27,11 +27,11 @@ export function WeatherReactiveButton({
   return (
     <button
       type={type}
-      className={`weather-button relative inline-flex h-11 items-center justify-center overflow-hidden rounded-xl border px-4 text-sm font-semibold shadow-[0_4px_14px_rgba(15,23,42,0.1)] transition-colors ${themeClassName} ${className ?? ""}`}
+      className={`weather-button weather-condition-pill relative inline-flex h-10 min-w-24 items-center justify-center overflow-hidden rounded-xl border px-3 text-xs font-semibold shadow-[0_4px_14px_rgba(15,23,42,0.1)] transition-colors ${themeClassName} ${className ?? ""}`}
       {...props}
     >
       <WeatherConditionEffects condition={condition} />
-      {children}
+      <span className="relative z-10 truncate capitalize">{children}</span>
     </button>
   );
 }

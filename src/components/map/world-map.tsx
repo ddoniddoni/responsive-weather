@@ -2,10 +2,13 @@
 
 import { geoCentroid } from "d3-geo";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
+import type {
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+  WheelEvent as ReactWheelEvent,
+} from "react";
 import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from "react-simple-maps";
 
-import { AdminBoundaryLayer } from "@/components/map/admin-boundary-layer";
 import { RegionalMap } from "@/components/map/regional-map";
 import { WeatherConditionMarker } from "@/components/map/weather-condition-marker";
 import { useAdminBoundaries } from "@/hooks/use-admin-boundaries";
@@ -24,9 +27,6 @@ const ZOOM_STEP = 220;
 const FOCUS_ANIMATION_DURATION = 420;
 const DRAG_LONGITUDE_SENSITIVITY = 0.12;
 const DRAG_LATITUDE_SENSITIVITY = 0.1;
-const REGIONAL_MODE_SCALE_THRESHOLD = 3000;
-const REGIONAL_MODE_RETURN_SCALE = 1600;
-const REGIONAL_MODE_COUNTRY_CODES = new Set(["KOR"]);
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
@@ -38,7 +38,7 @@ const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
 const FOCUSED_SCALE_BY_COUNTRY_CODE: Record<string, number> = {
   FRA: 620,
   JPN: 1500,
-  KOR: 3000,
+  KOR: 1800,
 };
 
 type WorldMapProps = {
@@ -93,10 +93,6 @@ function getFocusedScale(countryCode: string) {
   return FOCUSED_SCALE_BY_COUNTRY_CODE[countryCode] ?? FOCUSED_SCALE;
 }
 
-function canUseRegionalMode(countryCode: string | null) {
-  return countryCode ? REGIONAL_MODE_COUNTRY_CODES.has(countryCode) : false;
-}
-
 function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
   const labelMap: Record<AdminBoundaryLoadStatus, string | null> = {
     idle: null,
@@ -143,11 +139,13 @@ export function WorldMap({
   const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
   const [selectedCountryLabel, setSelectedCountryLabel] = useState<string | null>(null);
   const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
+  const [selectedCountryCoordinates, setSelectedCountryCoordinates] = useState<[number, number] | null>(null);
   const [mapMode, setMapMode] = useState<MapMode>("globe");
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const focusAnimationRef = useRef<number | null>(null);
   const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
   const isRegionalMode = mapMode === "regional" && Boolean(selectedCountryCode && selectedCountryName);
+  const canShowDetailButton = mapMode === "globe" && adminBoundaryStatus === "success";
 
   useEffect(() => {
     return () => {
@@ -178,15 +176,6 @@ export function WorldMap({
     const nextScale = clampScale(scale + delta);
 
     setScale(nextScale);
-    enterRegionalModeIfNeeded(selectedCountryCode, nextScale);
-  }
-
-  function enterRegionalModeIfNeeded(countryCode: string | null, nextScale: number) {
-    if (mapMode !== "globe" || !canUseRegionalMode(countryCode) || nextScale < REGIONAL_MODE_SCALE_THRESHOLD) {
-      return;
-    }
-
-    setMapMode("regional");
   }
 
   function cancelFocusAnimation() {
@@ -240,7 +229,7 @@ export function WorldMap({
     applyScaleDelta(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
   }
 
-  function focusCoordinates(coordinates: [number, number], targetScale: number, countryCode: string | null = null) {
+  function focusCoordinates(coordinates: [number, number], targetScale: number) {
     cancelFocusAnimation();
 
     const [longitude, latitude] = coordinates;
@@ -269,12 +258,6 @@ export function WorldMap({
 
       setScale(animatedScale);
 
-      if (canUseRegionalMode(countryCode) && animatedScale >= REGIONAL_MODE_SCALE_THRESHOLD) {
-        setMapMode("regional");
-        focusAnimationRef.current = null;
-        return;
-      }
-
       if (progress < 1) {
         focusAnimationRef.current = window.requestAnimationFrame(animate);
         return;
@@ -287,7 +270,7 @@ export function WorldMap({
   }
 
   function focusCountry(centroid: [number, number], countryCode: string) {
-    focusCoordinates(centroid, getFocusedScale(countryCode), countryCode);
+    focusCoordinates(centroid, getFocusedScale(countryCode));
   }
 
   function handleSelectRegion(region: SelectedRegion) {
@@ -296,10 +279,29 @@ export function WorldMap({
     onSelectRegion(region);
   }
 
+  function handleOpenRegionalDetail(event: ReactMouseEvent<HTMLElement>) {
+    event.stopPropagation();
+
+    if (adminBoundaryStatus !== "success") {
+      return;
+    }
+
+    cancelFocusAnimation();
+    setMapMode("regional");
+    setSelectedCountryLabel(selectedCountryName);
+    setSelectedMarkerCoordinates(null);
+  }
+
   function handleReturnToGlobe() {
     cancelFocusAnimation();
     setMapMode("globe");
-    setScale((previousScale) => Math.min(previousScale, REGIONAL_MODE_RETURN_SCALE));
+    setScale(FOCUSED_SCALE);
+
+    if (selectedCountryCode && selectedCountryName) {
+      setSelectedCountryLabel(selectedCountryName);
+      setSelectedMarkerCoordinates(selectedCountryCoordinates);
+      onSelectCountry({ code: selectedCountryCode, name: selectedCountryName });
+    }
   }
 
   return (
@@ -309,7 +311,7 @@ export function WorldMap({
           {hoveredCountryName ?? selectedCountryLabel ?? "지도에서 국가를 선택하세요"}
         </p>
         <span className="hidden text-xs font-medium text-cyan-700 dark:text-cyan-200 sm:inline">
-          Interactive Globe
+          {isRegionalMode ? "Regional Detail" : "Interactive Globe"}
         </span>
       </div>
 
@@ -367,14 +369,6 @@ export function WorldMap({
             />
             <Graticule stroke="rgba(240,249,255,0.32)" strokeWidth={0.35} />
 
-            <AdminBoundaryLayer
-              boundaries={boundaries}
-              countryCode={selectedCountryCode}
-              countryName={selectedCountryName}
-              selectedRegionCode={selectedRegionCode}
-              onSelectRegion={handleSelectRegion}
-            />
-
             <Geographies geography={WORLD_GEO_URL}>
               {({ geographies }) =>
                 geographies.map((geography, index) => {
@@ -395,6 +389,7 @@ export function WorldMap({
                         setMapMode("globe");
                         setSelectedCountryLabel(countryName);
                         setSelectedMarkerCoordinates(centroid);
+                        setSelectedCountryCoordinates(centroid);
                         focusCountry(centroid, countryCode);
                         onSelectCountry({ code: countryCode, name: countryName });
                       }}
@@ -441,12 +436,36 @@ export function WorldMap({
 
             {selectedCountryCode && selectedMarkerCoordinates ? (
               <Marker coordinates={selectedMarkerCoordinates}>
-                <g className="weather-country-popout-anchor pointer-events-none" aria-hidden="true">
-                  <line x1="0" y1="-6" x2="0" y2="-30" className="weather-country-popout-line" />
-                  <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot" />
-                  <foreignObject x="-104" y="-86" width="208" height="54" className="overflow-visible">
-                    <div className="weather-country-popout">
+                <g className="weather-country-popout-anchor" style={{ pointerEvents: "all" }}>
+                  <line x1="0" y1="-6" x2="0" y2="-36" className="weather-country-popout-line pointer-events-none" />
+                  <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot pointer-events-none" />
+                  <foreignObject
+                    x="-122"
+                    y="-98"
+                    width="244"
+                    height="66"
+                    className="overflow-visible"
+                    style={{ pointerEvents: "all" }}
+                  >
+                    <div
+                      className="weather-country-popout"
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={canShowDetailButton ? handleOpenRegionalDetail : undefined}
+                    >
                       <span>{selectedCountryLabel}</span>
+                      {canShowDetailButton ? (
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onClick={handleOpenRegionalDetail}
+                          className="weather-country-detail-button"
+                          aria-label={`${selectedCountryLabel} regional detail`}
+                        >
+                          Detail
+                        </button>
+                      ) : null}
                     </div>
                   </foreignObject>
                 </g>
@@ -502,7 +521,11 @@ export function WorldMap({
       </div>
 
       <div className="flex flex-col gap-1 px-4 py-3 text-xs text-slate-600 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
-        <p>Drag to rotate, use +/- or wheel to zoom, and click a country for details.</p>
+        <p>
+          {isRegionalMode
+            ? "Select a region for local weather, or return to the globe."
+            : "Drag to rotate, use +/- or wheel to zoom, and click a country for details."}
+        </p>
         {selectedCountryCode ? (
           <p>
             Regional data:{" "}
