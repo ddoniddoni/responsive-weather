@@ -1,13 +1,13 @@
 import type {
   AdminBoundaryFeature,
   AdminBoundaryFeatureCollection,
-  AdminBoundaryLevel,
 } from "@/types/admin-boundary";
 
-const GEOBOUNDARIES_API_BASE_URL = "https://www.geoboundaries.org/api/current/gbOpen";
-
-type GeoBoundariesMetadata = {
-  gjDownloadURL: string;
+export type AdminBoundaryBounds = {
+  minLongitude: number;
+  maxLongitude: number;
+  minLatitude: number;
+  maxLatitude: number;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -22,17 +22,27 @@ function isAdminBoundaryFeature(value: unknown): value is AdminBoundaryFeature {
   return "geometry" in value;
 }
 
-function parseGeoBoundariesMetadata(value: unknown): GeoBoundariesMetadata {
-  if (!isRecord(value) || typeof value.gjDownloadURL !== "string") {
-    throw new Error("Invalid geoBoundaries metadata response.");
+function collectCoordinatePositions(value: unknown, positions: Array<[number, number]>) {
+  if (!Array.isArray(value)) {
+    return;
   }
 
-  return {
-    gjDownloadURL: value.gjDownloadURL,
-  };
+  const [longitude, latitude] = value;
+
+  if (typeof longitude === "number" && typeof latitude === "number") {
+    if (longitude >= -180 && longitude <= 180 && latitude >= -90 && latitude <= 90) {
+      positions.push([longitude, latitude]);
+    }
+
+    return;
+  }
+
+  for (const entry of value) {
+    collectCoordinatePositions(entry, positions);
+  }
 }
 
-function parseAdminBoundaryCollection(value: unknown): AdminBoundaryFeatureCollection {
+export function parseAdminBoundaryCollection(value: unknown): AdminBoundaryFeatureCollection {
   if (!isRecord(value) || value.type !== "FeatureCollection" || !Array.isArray(value.features)) {
     throw new Error("Invalid administrative boundary GeoJSON response.");
   }
@@ -43,38 +53,6 @@ function parseAdminBoundaryCollection(value: unknown): AdminBoundaryFeatureColle
     type: "FeatureCollection",
     features,
   };
-}
-
-export async function fetchAdminBoundaries(
-  countryCode: string,
-  level: AdminBoundaryLevel,
-  signal?: AbortSignal,
-): Promise<AdminBoundaryFeatureCollection | null> {
-  const metadataUrl = `${GEOBOUNDARIES_API_BASE_URL}/${countryCode}/${level}/`;
-  const metadataResponse = await fetch(metadataUrl, { signal });
-
-  if (metadataResponse.status === 404) {
-    return null;
-  }
-
-  if (!metadataResponse.ok) {
-    throw new Error(`Failed to fetch ${level} metadata for ${countryCode}.`);
-  }
-
-  const metadata = parseGeoBoundariesMetadata(await metadataResponse.json());
-  const boundaryResponse = await fetch(metadata.gjDownloadURL, { signal });
-
-  if (!boundaryResponse.ok) {
-    throw new Error(`Failed to fetch ${level} boundaries for ${countryCode}.`);
-  }
-
-  const collection = parseAdminBoundaryCollection(await boundaryResponse.json());
-
-  if (collection.features.length === 0) {
-    return null;
-  }
-
-  return collection;
 }
 
 export function getAdminBoundaryName(feature: AdminBoundaryFeature) {
@@ -111,4 +89,69 @@ export function getAdminBoundaryCode(feature: AdminBoundaryFeature) {
   }
 
   return String(feature.id ?? "admin-boundary");
+}
+
+export function getAdminBoundaryCenter(feature: AdminBoundaryFeature): [number, number] | null {
+  if (!isRecord(feature.geometry) || !("coordinates" in feature.geometry)) {
+    return null;
+  }
+
+  const positions: Array<[number, number]> = [];
+
+  collectCoordinatePositions(feature.geometry.coordinates, positions);
+
+  if (positions.length === 0) {
+    return null;
+  }
+
+  let minLongitude = positions[0][0];
+  let maxLongitude = positions[0][0];
+  let minLatitude = positions[0][1];
+  let maxLatitude = positions[0][1];
+
+  for (const [longitude, latitude] of positions) {
+    minLongitude = Math.min(minLongitude, longitude);
+    maxLongitude = Math.max(maxLongitude, longitude);
+    minLatitude = Math.min(minLatitude, latitude);
+    maxLatitude = Math.max(maxLatitude, latitude);
+  }
+
+  return [(minLongitude + maxLongitude) / 2, (minLatitude + maxLatitude) / 2];
+}
+
+export function getAdminBoundaryCollectionBounds(
+  collection: AdminBoundaryFeatureCollection,
+): AdminBoundaryBounds | null {
+  const positions: Array<[number, number]> = [];
+
+  for (const feature of collection.features) {
+    if (!isRecord(feature.geometry) || !("coordinates" in feature.geometry)) {
+      continue;
+    }
+
+    collectCoordinatePositions(feature.geometry.coordinates, positions);
+  }
+
+  if (positions.length === 0) {
+    return null;
+  }
+
+  let minLongitude = positions[0][0];
+  let maxLongitude = positions[0][0];
+  let minLatitude = positions[0][1];
+  let maxLatitude = positions[0][1];
+
+  for (const [longitude, latitude] of positions) {
+    minLongitude = Math.min(minLongitude, longitude);
+    maxLongitude = Math.max(maxLongitude, longitude);
+    minLatitude = Math.min(minLatitude, latitude);
+    maxLatitude = Math.max(maxLatitude, latitude);
+  }
+
+  return {
+    minLongitude,
+    maxLongitude,
+    minLatitude,
+    maxLatitude,
+  };
 }

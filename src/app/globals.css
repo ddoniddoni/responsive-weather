@@ -126,6 +126,52 @@ body {
   opacity: 0.8;
 }
 
+.weather-condition-pill .weather-sun {
+  right: 6px;
+  top: 5px;
+  height: 12px;
+  width: 12px;
+  opacity: 0.55;
+}
+
+.weather-condition-pill .weather-cloud {
+  opacity: 0.28;
+}
+
+.weather-condition-pill .weather-cloud-shape {
+  left: 12px;
+  top: 62%;
+  width: 28px;
+  height: 11px;
+  border-color: rgba(148, 163, 184, 0.46);
+  filter: none;
+}
+
+.weather-condition-pill .weather-cloud-shape::before {
+  width: 11px;
+  height: 11px;
+  left: 5px;
+  top: -5px;
+}
+
+.weather-condition-pill .weather-cloud-shape::after {
+  width: 14px;
+  height: 14px;
+  right: 5px;
+  top: -7px;
+}
+
+.weather-condition-pill .weather-cloud-shape-2 {
+  left: 40px;
+  top: 46%;
+  width: 20px;
+  height: 8px;
+}
+
+.weather-condition-pill .weather-rain {
+  opacity: 0.34;
+}
+
 @keyframes weather-rain-fall {
   from {
     transform: translateY(-12px);
@@ -185,7 +231,6 @@ html.dark .weather-map-stage {
 }
 
 .weather-country-popout-anchor {
-  pointer-events: none;
   animation: country-popout-enter 420ms cubic-bezier(0.2, 1.4, 0.34, 1) both;
   transform-box: fill-box;
   transform-origin: center bottom;
@@ -193,10 +238,11 @@ html.dark .weather-map-stage {
 
 .weather-country-popout {
   display: flex;
-  width: 196px;
-  height: 44px;
+  width: 232px;
+  min-height: 54px;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 8px;
   border: 1px solid rgba(255, 255, 255, 0.92);
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(224, 242, 254, 0.92));
@@ -207,14 +253,36 @@ html.dark .weather-map-stage {
   font-size: 16px;
   font-weight: 800;
   line-height: 1;
+  padding: 8px 10px;
+  pointer-events: auto;
   transform: perspective(80px) rotateX(8deg);
 }
 
 .weather-country-popout span {
-  max-width: 170px;
+  max-width: 134px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.weather-country-detail-button {
+  display: inline-flex;
+  height: 30px;
+  min-width: 64px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(14, 116, 144, 0.24);
+  border-radius: 8px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.weather-country-detail-button:hover {
+  background: #164e63;
 }
 
 .weather-country-popout-line {

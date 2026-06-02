@@ -65,19 +65,21 @@ export function WeatherMetricCard({
 
   return (
     <div
-      className={`weather-button relative min-h-32 overflow-hidden rounded-xl border p-4 ${weatherTheme.cardClassName}`}
+      className={`weather-button relative isolate min-h-32 overflow-hidden rounded-xl border p-4 ${weatherTheme.cardClassName}`}
     >
       <WeatherConditionEffects condition={condition} />
-      <span
-        aria-hidden="true"
-        className={`absolute left-4 top-4 h-2 w-2 rounded-full ${weatherTheme.accentClassName}`}
-      />
-      <div className="relative z-10 flex h-full flex-col justify-between gap-4 pl-4">
+      <div className="relative z-10 flex h-full flex-col justify-between gap-4">
         <div>
-          <dt className={`text-xs font-semibold uppercase ${baseTextClassName}`}>{label}</dt>
-          <dd className="mt-2 text-2xl font-bold leading-none tracking-normal">{value}</dd>
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className={`h-2 w-2 shrink-0 rounded-full ${weatherTheme.accentClassName}`}
+            />
+            <dt className={`text-xs font-semibold uppercase leading-none ${baseTextClassName}`}>{label}</dt>
+          </div>
+          <dd className="mt-2 pl-4 text-2xl font-bold leading-none tracking-normal">{value}</dd>
         </div>
-        <p className={`text-xs leading-5 ${baseTextClassName}`}>{helperText}</p>
+        <p className={`pl-4 text-xs leading-5 ${baseTextClassName}`}>{helperText}</p>
       </div>
     </div>
   );

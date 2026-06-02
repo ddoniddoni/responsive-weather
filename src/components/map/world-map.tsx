@@ -2,13 +2,18 @@
 
 import { geoCentroid } from "d3-geo";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
+import type {
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+  WheelEvent as ReactWheelEvent,
+} from "react";
 import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from "react-simple-maps";
 
-import { AdminBoundaryLayer } from "@/components/map/admin-boundary-layer";
+import { RegionalMap } from "@/components/map/regional-map";
 import { WeatherConditionMarker } from "@/components/map/weather-condition-marker";
 import { useAdminBoundaries } from "@/hooks/use-admin-boundaries";
 import type { AdminBoundaryLoadStatus } from "@/types/admin-boundary";
+import type { MapMode } from "@/types/map-mode";
 import type { WeatherCondition } from "@/types/weather";
 import type { SelectedCountry, SelectedRegion } from "@/types/weather-data";
 
@@ -16,16 +21,24 @@ const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m
 const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
 const DEFAULT_SCALE = 220;
 const MIN_SCALE = 160;
-const MAX_SCALE = 1200;
-const FOCUSED_SCALE = 440;
-const ZOOM_STEP = 60;
+const MAX_SCALE = 5200;
+const FOCUSED_SCALE = 520;
+const ZOOM_STEP = 220;
 const FOCUS_ANIMATION_DURATION = 420;
+const DRAG_LONGITUDE_SENSITIVITY = 0.12;
+const DRAG_LATITUDE_SENSITIVITY = 0.1;
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
   Japan: "JPN",
   "South Korea": "KOR",
   "United States of America": "USA",
+};
+
+const FOCUSED_SCALE_BY_COUNTRY_CODE: Record<string, number> = {
+  FRA: 620,
+  JPN: 1500,
+  KOR: 1800,
 };
 
 type WorldMapProps = {
@@ -76,13 +89,17 @@ function easeOutCubic(progress: number) {
   return 1 - (1 - progress) ** 3;
 }
 
+function getFocusedScale(countryCode: string) {
+  return FOCUSED_SCALE_BY_COUNTRY_CODE[countryCode] ?? FOCUSED_SCALE;
+}
+
 function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
   const labelMap: Record<AdminBoundaryLoadStatus, string | null> = {
     idle: null,
-    loading: "Loading ADM1 boundaries",
-    success: "ADM1 boundaries visible",
-    error: "ADM1 boundaries unavailable",
-    unsupported: "ADM1 boundaries not supported",
+    loading: "Loading regional boundaries",
+    success: null,
+    error: "Regional boundaries temporarily unavailable",
+    unsupported: "Regional boundaries are not available here",
   };
 
   return labelMap[status];
@@ -122,9 +139,13 @@ export function WorldMap({
   const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
   const [selectedCountryLabel, setSelectedCountryLabel] = useState<string | null>(null);
   const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
+  const [selectedCountryCoordinates, setSelectedCountryCoordinates] = useState<[number, number] | null>(null);
+  const [mapMode, setMapMode] = useState<MapMode>("globe");
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const focusAnimationRef = useRef<number | null>(null);
   const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
+  const isRegionalMode = mapMode === "regional" && Boolean(selectedCountryCode && selectedCountryName);
+  const canShowDetailButton = mapMode === "globe" && adminBoundaryStatus === "success";
 
   useEffect(() => {
     return () => {
@@ -146,12 +167,15 @@ export function WorldMap({
 
   function handleResetView() {
     cancelFocusAnimation();
+    setMapMode("globe");
     setScale(DEFAULT_SCALE);
     setRotation([0, -15, 0]);
   }
 
   function applyScaleDelta(delta: number) {
-    setScale((previousScale) => clampScale(previousScale + delta));
+    const nextScale = clampScale(scale + delta);
+
+    setScale(nextScale);
   }
 
   function cancelFocusAnimation() {
@@ -164,13 +188,17 @@ export function WorldMap({
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (isRegionalMode) {
+      return;
+    }
+
     cancelFocusAnimation();
     setIsDragging(true);
     dragStartRef.current = { x: event.clientX, y: event.clientY };
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!dragStartRef.current) {
+    if (isRegionalMode || !dragStartRef.current) {
       return;
     }
 
@@ -178,8 +206,8 @@ export function WorldMap({
     const deltaY = event.clientY - dragStartRef.current.y;
 
     setRotation(([longitude, latitude, gamma]) => [
-      longitude + deltaX * 0.25,
-      clampLatitude(latitude - deltaY * 0.2),
+      longitude + deltaX * DRAG_LONGITUDE_SENSITIVITY,
+      clampLatitude(latitude - deltaY * DRAG_LATITUDE_SENSITIVITY),
       gamma,
     ]);
 
@@ -192,15 +220,19 @@ export function WorldMap({
   }
 
   function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
+    if (isRegionalMode) {
+      return;
+    }
+
     event.preventDefault();
     cancelFocusAnimation();
     applyScaleDelta(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
   }
 
-  function focusCountry(centroid: [number, number]) {
+  function focusCoordinates(coordinates: [number, number], targetScale: number) {
     cancelFocusAnimation();
 
-    const [longitude, latitude] = centroid;
+    const [longitude, latitude] = coordinates;
     const fromRotation = rotation;
     const targetRotation: [number, number, number] = [
       -longitude,
@@ -208,7 +240,7 @@ export function WorldMap({
       fromRotation[2],
     ];
     const fromScale = scale;
-    const targetScale = Math.max(FOCUSED_SCALE, fromScale);
+    const nextScale = Math.max(targetScale, fromScale);
     const startedAt = window.performance.now();
     const longitudeDelta = getShortestAngleDelta(fromRotation[0], targetRotation[0]);
     const latitudeDelta = targetRotation[1] - fromRotation[1];
@@ -222,7 +254,9 @@ export function WorldMap({
         fromRotation[1] + latitudeDelta * easedProgress,
         fromRotation[2],
       ]);
-      setScale(fromScale + (targetScale - fromScale) * easedProgress);
+      const animatedScale = fromScale + (nextScale - fromScale) * easedProgress;
+
+      setScale(animatedScale);
 
       if (progress < 1) {
         focusAnimationRef.current = window.requestAnimationFrame(animate);
@@ -235,10 +269,39 @@ export function WorldMap({
     focusAnimationRef.current = window.requestAnimationFrame(animate);
   }
 
+  function focusCountry(centroid: [number, number], countryCode: string) {
+    focusCoordinates(centroid, getFocusedScale(countryCode));
+  }
+
   function handleSelectRegion(region: SelectedRegion) {
     setSelectedCountryLabel(region.regionName);
     setSelectedMarkerCoordinates(region.coordinates);
     onSelectRegion(region);
+  }
+
+  function handleOpenRegionalDetail(event: ReactMouseEvent<HTMLElement>) {
+    event.stopPropagation();
+
+    if (adminBoundaryStatus !== "success") {
+      return;
+    }
+
+    cancelFocusAnimation();
+    setMapMode("regional");
+    setSelectedCountryLabel(selectedCountryName);
+    setSelectedMarkerCoordinates(null);
+  }
+
+  function handleReturnToGlobe() {
+    cancelFocusAnimation();
+    setMapMode("globe");
+    setScale(FOCUSED_SCALE);
+
+    if (selectedCountryCode && selectedCountryName) {
+      setSelectedCountryLabel(selectedCountryName);
+      setSelectedMarkerCoordinates(selectedCountryCoordinates);
+      onSelectCountry({ code: selectedCountryCode, name: selectedCountryName });
+    }
   }
 
   return (
@@ -248,13 +311,13 @@ export function WorldMap({
           {hoveredCountryName ?? selectedCountryLabel ?? "지도에서 국가를 선택하세요"}
         </p>
         <span className="hidden text-xs font-medium text-cyan-700 dark:text-cyan-200 sm:inline">
-          Interactive Globe
+          {isRegionalMode ? "Regional Detail" : "Interactive Globe"}
         </span>
       </div>
 
       <div
         className={`weather-map-stage relative h-[56vh] min-h-[320px] max-h-[620px] w-full overflow-hidden ${
-          isDragging ? "cursor-grabbing" : "cursor-grab"
+          isRegionalMode ? "cursor-default" : isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -265,7 +328,19 @@ export function WorldMap({
         <div className="weather-map-aurora" aria-hidden="true" />
         <div className="weather-map-grid" aria-hidden="true" />
 
-        {hasMounted ? (
+        {isRegionalMode && selectedCountryCode && selectedCountryName ? (
+          <RegionalMap
+            boundaries={boundaries}
+            countryCode={selectedCountryCode}
+            countryName={selectedCountryName}
+            selectedRegionCode={selectedRegionCode}
+            selectedLabel={selectedCountryLabel}
+            selectedMarkerCoordinates={selectedMarkerCoordinates}
+            statusLabel={adminBoundaryStatusLabel}
+            onSelectRegion={handleSelectRegion}
+            onReturnToGlobe={handleReturnToGlobe}
+          />
+        ) : hasMounted ? (
           <ComposableMap
             projection="geoOrthographic"
             projectionConfig={{ scale, rotate: rotation }}
@@ -311,15 +386,19 @@ export function WorldMap({
                       onMouseEnter={() => setHoveredCountryName(countryName)}
                       onMouseLeave={() => setHoveredCountryName(null)}
                       onClick={() => {
+                        setMapMode("globe");
                         setSelectedCountryLabel(countryName);
                         setSelectedMarkerCoordinates(centroid);
-                        focusCountry(centroid);
+                        setSelectedCountryCoordinates(centroid);
+                        focusCountry(centroid, countryCode);
                         onSelectCountry({ code: countryCode, name: countryName });
                       }}
-                      className="cursor-pointer outline-none transition-colors"
+                      className={`outline-none transition-colors ${
+                        isSelected ? "pointer-events-none" : "cursor-pointer"
+                      }`}
                       style={{
                         default: {
-                          fill: defaultFill,
+                          fill: isSelected ? "rgba(183, 228, 199, 0.18)" : defaultFill,
                           stroke: isSelected ? "#111827" : "rgba(14, 116, 144, 0.62)",
                           strokeWidth: isSelected ? 1.8 : 0.75,
                         },
@@ -340,19 +419,12 @@ export function WorldMap({
               }
             </Geographies>
 
-            <AdminBoundaryLayer
-              boundaries={boundaries}
-              countryCode={selectedCountryCode}
-              countryName={selectedCountryName}
-              selectedRegionCode={selectedRegionCode}
-              onSelectRegion={handleSelectRegion}
-            />
-
             <Sphere
               id="globe-shade"
               fill="url(#globeShadeGradient)"
               stroke="rgba(255,255,255,0.22)"
               strokeWidth={0.8}
+              className="pointer-events-none"
             />
 
             {selectedMarkerCoordinates && selectedWeatherCondition ? (
@@ -364,12 +436,36 @@ export function WorldMap({
 
             {selectedCountryCode && selectedMarkerCoordinates ? (
               <Marker coordinates={selectedMarkerCoordinates}>
-                <g className="weather-country-popout-anchor">
-                  <line x1="0" y1="-6" x2="0" y2="-30" className="weather-country-popout-line" />
-                  <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot" />
-                  <foreignObject x="-104" y="-86" width="208" height="54" className="overflow-visible">
-                    <div className="weather-country-popout">
+                <g className="weather-country-popout-anchor" style={{ pointerEvents: "all" }}>
+                  <line x1="0" y1="-6" x2="0" y2="-36" className="weather-country-popout-line pointer-events-none" />
+                  <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot pointer-events-none" />
+                  <foreignObject
+                    x="-122"
+                    y="-98"
+                    width="244"
+                    height="66"
+                    className="overflow-visible"
+                    style={{ pointerEvents: "all" }}
+                  >
+                    <div
+                      className="weather-country-popout"
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={canShowDetailButton ? handleOpenRegionalDetail : undefined}
+                    >
                       <span>{selectedCountryLabel}</span>
+                      {canShowDetailButton ? (
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onClick={handleOpenRegionalDetail}
+                          className="weather-country-detail-button"
+                          aria-label={`${selectedCountryLabel} regional detail`}
+                        >
+                          Detail
+                        </button>
+                      ) : null}
                     </div>
                   </foreignObject>
                 </g>
@@ -385,6 +481,7 @@ export function WorldMap({
           </div>
         )}
 
+        {!isRegionalMode ? (
         <div className="absolute right-2 top-2 z-20 flex gap-2">
           <button
             type="button"
@@ -411,8 +508,9 @@ export function WorldMap({
             Reset
           </button>
         </div>
+        ) : null}
 
-        {adminBoundaryStatusLabel ? (
+        {!isRegionalMode && adminBoundaryStatusLabel ? (
           <div
             role="status"
             className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-white/75 bg-white/90 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-600 dark:bg-slate-900/86 dark:text-slate-100"
@@ -423,10 +521,14 @@ export function WorldMap({
       </div>
 
       <div className="flex flex-col gap-1 px-4 py-3 text-xs text-slate-600 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
-        <p>Drag to rotate, use +/- or wheel to zoom, and click a country for details.</p>
+        <p>
+          {isRegionalMode
+            ? "Select a region for local weather, or return to the globe."
+            : "Drag to rotate, use +/- or wheel to zoom, and click a country for details."}
+        </p>
         {selectedCountryCode ? (
           <p>
-            ADM1 data:{" "}
+            Regional data:{" "}
             <a
               href="https://www.geoboundaries.org/"
               target="_blank"
