@@ -1,3 +1,4 @@
+import { WeatherMetricCard } from "@/components/weather/weather-metric-card";
 import { WeatherReactiveButton } from "@/components/weather/weather-reactive-button";
 import type { WeatherData } from "@/types/weather-data";
 
@@ -20,10 +21,32 @@ export function WeatherDetailPanel({ weather, theme }: WeatherDetailPanelProps) 
 
   const title = weather.regionName ?? weather.countryName;
   const subtitle = weather.regionName ? `${weather.countryName} / ${weather.regionCode}` : weather.countryCode;
+  const metricCards = [
+    {
+      label: "Temperature",
+      value: `${weather.temperature}°C`,
+      helperText: "Current air temperature",
+    },
+    {
+      label: "Feels Like",
+      value: `${weather.feelsLike}°C`,
+      helperText: "Perceived outdoor comfort",
+    },
+    {
+      label: "Humidity",
+      value: `${weather.humidity}%`,
+      helperText: "Moisture level in the air",
+    },
+    {
+      label: "Wind",
+      value: `${weather.windSpeed} m/s`,
+      helperText: "Surface wind speed",
+    },
+  ];
 
   return (
     <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">{subtitle}</p>
@@ -33,23 +56,17 @@ export function WeatherDetailPanel({ weather, theme }: WeatherDetailPanelProps) 
         </WeatherReactiveButton>
       </div>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{weather.description}</p>
-      <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-lg bg-slate-100 p-3 dark:bg-slate-700">
-          <dt className="text-slate-500 dark:text-slate-300">Temperature</dt>
-          <dd className="mt-1 font-semibold text-slate-900 dark:text-slate-50">{weather.temperature}°C</dd>
-        </div>
-        <div className="rounded-lg bg-slate-100 p-3 dark:bg-slate-700">
-          <dt className="text-slate-500 dark:text-slate-300">Feels Like</dt>
-          <dd className="mt-1 font-semibold text-slate-900 dark:text-slate-50">{weather.feelsLike}°C</dd>
-        </div>
-        <div className="rounded-lg bg-slate-100 p-3 dark:bg-slate-700">
-          <dt className="text-slate-500 dark:text-slate-300">Humidity</dt>
-          <dd className="mt-1 font-semibold text-slate-900 dark:text-slate-50">{weather.humidity}%</dd>
-        </div>
-        <div className="rounded-lg bg-slate-100 p-3 dark:bg-slate-700">
-          <dt className="text-slate-500 dark:text-slate-300">Wind</dt>
-          <dd className="mt-1 font-semibold text-slate-900 dark:text-slate-50">{weather.windSpeed} m/s</dd>
-        </div>
+      <dl className="mt-5 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        {metricCards.map((metricCard) => (
+          <WeatherMetricCard
+            key={metricCard.label}
+            condition={weather.condition}
+            label={metricCard.label}
+            value={metricCard.value}
+            helperText={metricCard.helperText}
+            theme={theme}
+          />
+        ))}
       </dl>
     </aside>
   );
