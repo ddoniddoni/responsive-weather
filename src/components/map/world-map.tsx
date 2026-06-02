@@ -1,7 +1,7 @@
 "use client";
 
 import { geoCentroid } from "d3-geo";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from "react-simple-maps";
 
@@ -88,6 +88,20 @@ function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
   return labelMap[status];
 }
 
+function subscribeToClientMount(onStoreChange: () => void) {
+  onStoreChange();
+
+  return () => undefined;
+}
+
+function getClientMountSnapshot() {
+  return true;
+}
+
+function getServerMountSnapshot() {
+  return false;
+}
+
 export function WorldMap({
   selectedCountryCode,
   selectedCountryName,
@@ -96,6 +110,11 @@ export function WorldMap({
   onSelectCountry,
   onSelectRegion,
 }: WorldMapProps) {
+  const hasMounted = useSyncExternalStore(
+    subscribeToClientMount,
+    getClientMountSnapshot,
+    getServerMountSnapshot,
+  );
   const { boundaries, status: adminBoundaryStatus } = useAdminBoundaries(selectedCountryCode);
   const [scale, setScale] = useState(DEFAULT_SCALE);
   const [rotation, setRotation] = useState<[number, number, number]>([0, -15, 0]);
@@ -246,116 +265,125 @@ export function WorldMap({
         <div className="weather-map-aurora" aria-hidden="true" />
         <div className="weather-map-grid" aria-hidden="true" />
 
-        <ComposableMap
-          projection="geoOrthographic"
-          projectionConfig={{ scale, rotate: rotation }}
-          className="relative z-10 h-full w-full drop-shadow-[0_24px_32px_rgba(8,47,73,0.32)]"
-          aria-label="World map"
-        >
-          <defs>
-            <radialGradient id="globeOceanGradient" cx="38%" cy="30%" r="68%">
-              <stop offset="0%" stopColor="#dff9ff" />
-              <stop offset="42%" stopColor="#6bd3f3" />
-              <stop offset="78%" stopColor="#1679a7" />
-              <stop offset="100%" stopColor="#075985" />
-            </radialGradient>
-            <radialGradient id="globeShadeGradient" cx="34%" cy="26%" r="74%">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
-              <stop offset="58%" stopColor="rgba(255,255,255,0)" />
-              <stop offset="100%" stopColor="rgba(15,23,42,0.34)" />
-            </radialGradient>
-          </defs>
+        {hasMounted ? (
+          <ComposableMap
+            projection="geoOrthographic"
+            projectionConfig={{ scale, rotate: rotation }}
+            className="relative z-10 h-full w-full drop-shadow-[0_24px_32px_rgba(8,47,73,0.32)]"
+            aria-label="World map"
+          >
+            <defs>
+              <radialGradient id="globeOceanGradient" cx="38%" cy="30%" r="68%">
+                <stop offset="0%" stopColor="#dff9ff" />
+                <stop offset="42%" stopColor="#6bd3f3" />
+                <stop offset="78%" stopColor="#1679a7" />
+                <stop offset="100%" stopColor="#075985" />
+              </radialGradient>
+              <radialGradient id="globeShadeGradient" cx="34%" cy="26%" r="74%">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
+                <stop offset="58%" stopColor="rgba(255,255,255,0)" />
+                <stop offset="100%" stopColor="rgba(15,23,42,0.34)" />
+              </radialGradient>
+            </defs>
 
-          <Sphere
-            id="globe-ocean"
-            fill="url(#globeOceanGradient)"
-            stroke="rgba(224,242,254,0.9)"
-            strokeWidth={0.8}
-          />
-          <Graticule stroke="rgba(240,249,255,0.32)" strokeWidth={0.35} />
-
-          <Geographies geography={WORLD_GEO_URL}>
-            {({ geographies }) =>
-              geographies.map((geography, index) => {
-                const feature = geography as GeographyFeature;
-                const countryName = feature.properties.name ?? feature.properties.NAME ?? "Unknown";
-                const countryCode = getCountryCode(feature, countryName);
-                const isSelected = selectedCountryCode === countryCode;
-                const centroid = geoCentroid(feature as never) as [number, number];
-                const defaultFill = LAND_COLORS[index % LAND_COLORS.length];
-
-                return (
-                  <Geography
-                    key={feature.rsmKey}
-                    geography={geography}
-                    onMouseEnter={() => setHoveredCountryName(countryName)}
-                    onMouseLeave={() => setHoveredCountryName(null)}
-                    onClick={() => {
-                      setSelectedCountryLabel(countryName);
-                      setSelectedMarkerCoordinates(centroid);
-                      focusCountry(centroid);
-                      onSelectCountry({ code: countryCode, name: countryName });
-                    }}
-                    className="cursor-pointer outline-none transition-colors"
-                    style={{
-                      default: {
-                        fill: defaultFill,
-                        stroke: isSelected ? "#111827" : "rgba(14, 116, 144, 0.62)",
-                        strokeWidth: isSelected ? 1.8 : 0.75,
-                      },
-                      hover: {
-                        fill: "#fde68a",
-                        stroke: "#0f172a",
-                        strokeWidth: 1.1,
-                      },
-                      pressed: {
-                        fill: "#f59e0b",
-                        stroke: "#0f172a",
-                        strokeWidth: 1.2,
-                      },
-                    }}
-                  />
-                );
-              })
-            }
-          </Geographies>
-
-          <AdminBoundaryLayer
-            boundaries={boundaries}
-            countryCode={selectedCountryCode}
-            countryName={selectedCountryName}
-            selectedRegionCode={selectedRegionCode}
-            onSelectRegion={handleSelectRegion}
-          />
-
-          <Sphere
-            id="globe-shade"
-            fill="url(#globeShadeGradient)"
-            stroke="rgba(255,255,255,0.22)"
-            strokeWidth={0.8}
-          />
-
-          {selectedMarkerCoordinates && selectedWeatherCondition ? (
-            <WeatherConditionMarker
-              condition={selectedWeatherCondition}
-              coordinates={selectedMarkerCoordinates}
+            <Sphere
+              id="globe-ocean"
+              fill="url(#globeOceanGradient)"
+              stroke="rgba(224,242,254,0.9)"
+              strokeWidth={0.8}
             />
-          ) : null}
+            <Graticule stroke="rgba(240,249,255,0.32)" strokeWidth={0.35} />
 
-          {selectedCountryCode && selectedMarkerCoordinates ? (
-            <Marker coordinates={selectedMarkerCoordinates}>
-              <g className="weather-country-popout-anchor">
-                <line x1="0" y1="-6" x2="0" y2="-30" className="weather-country-popout-line" />
-                <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot" />
-                <foreignObject x="-104" y="-86" width="208" height="54" className="overflow-visible">
-                  <div className="weather-country-popout">
-                    <span>{selectedCountryLabel}</span>
-                  </div>
-                </foreignObject>
-              </g>
-            </Marker>
-          ) : null}
-        </ComposableMap>
+            <Geographies geography={WORLD_GEO_URL}>
+              {({ geographies }) =>
+                geographies.map((geography, index) => {
+                  const feature = geography as GeographyFeature;
+                  const countryName = feature.properties.name ?? feature.properties.NAME ?? "Unknown";
+                  const countryCode = getCountryCode(feature, countryName);
+                  const isSelected = selectedCountryCode === countryCode;
+                  const centroid = geoCentroid(feature as never) as [number, number];
+                  const defaultFill = LAND_COLORS[index % LAND_COLORS.length];
+
+                  return (
+                    <Geography
+                      key={feature.rsmKey}
+                      geography={geography}
+                      onMouseEnter={() => setHoveredCountryName(countryName)}
+                      onMouseLeave={() => setHoveredCountryName(null)}
+                      onClick={() => {
+                        setSelectedCountryLabel(countryName);
+                        setSelectedMarkerCoordinates(centroid);
+                        focusCountry(centroid);
+                        onSelectCountry({ code: countryCode, name: countryName });
+                      }}
+                      className="cursor-pointer outline-none transition-colors"
+                      style={{
+                        default: {
+                          fill: defaultFill,
+                          stroke: isSelected ? "#111827" : "rgba(14, 116, 144, 0.62)",
+                          strokeWidth: isSelected ? 1.8 : 0.75,
+                        },
+                        hover: {
+                          fill: "#fde68a",
+                          stroke: "#0f172a",
+                          strokeWidth: 1.1,
+                        },
+                        pressed: {
+                          fill: "#f59e0b",
+                          stroke: "#0f172a",
+                          strokeWidth: 1.2,
+                        },
+                      }}
+                    />
+                  );
+                })
+              }
+            </Geographies>
+
+            <AdminBoundaryLayer
+              boundaries={boundaries}
+              countryCode={selectedCountryCode}
+              countryName={selectedCountryName}
+              selectedRegionCode={selectedRegionCode}
+              onSelectRegion={handleSelectRegion}
+            />
+
+            <Sphere
+              id="globe-shade"
+              fill="url(#globeShadeGradient)"
+              stroke="rgba(255,255,255,0.22)"
+              strokeWidth={0.8}
+            />
+
+            {selectedMarkerCoordinates && selectedWeatherCondition ? (
+              <WeatherConditionMarker
+                condition={selectedWeatherCondition}
+                coordinates={selectedMarkerCoordinates}
+              />
+            ) : null}
+
+            {selectedCountryCode && selectedMarkerCoordinates ? (
+              <Marker coordinates={selectedMarkerCoordinates}>
+                <g className="weather-country-popout-anchor">
+                  <line x1="0" y1="-6" x2="0" y2="-30" className="weather-country-popout-line" />
+                  <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot" />
+                  <foreignObject x="-104" y="-86" width="208" height="54" className="overflow-visible">
+                    <div className="weather-country-popout">
+                      <span>{selectedCountryLabel}</span>
+                    </div>
+                  </foreignObject>
+                </g>
+              </Marker>
+            ) : null}
+          </ComposableMap>
+        ) : (
+          <div
+            aria-hidden="true"
+            className="relative z-10 h-full w-full"
+          >
+            <div className="absolute left-1/2 top-1/2 h-[min(72vw,480px)] w-[min(72vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-100 bg-[radial-gradient(circle_at_38%_30%,#dff9ff_0%,#6bd3f3_42%,#1679a7_78%,#075985_100%)] shadow-[0_24px_32px_rgba(8,47,73,0.32)] dark:border-slate-600" />
+          </div>
+        )}
 
         <div className="absolute right-2 top-2 z-20 flex gap-2">
           <button
