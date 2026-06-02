@@ -6,9 +6,11 @@ import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent }
 import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from "react-simple-maps";
 
 import { AdminBoundaryLayer } from "@/components/map/admin-boundary-layer";
+import { RegionalMap } from "@/components/map/regional-map";
 import { WeatherConditionMarker } from "@/components/map/weather-condition-marker";
 import { useAdminBoundaries } from "@/hooks/use-admin-boundaries";
 import type { AdminBoundaryLoadStatus } from "@/types/admin-boundary";
+import type { MapMode } from "@/types/map-mode";
 import type { WeatherCondition } from "@/types/weather";
 import type { SelectedCountry, SelectedRegion } from "@/types/weather-data";
 
@@ -20,6 +22,11 @@ const MAX_SCALE = 5200;
 const FOCUSED_SCALE = 520;
 const ZOOM_STEP = 220;
 const FOCUS_ANIMATION_DURATION = 420;
+const DRAG_LONGITUDE_SENSITIVITY = 0.12;
+const DRAG_LATITUDE_SENSITIVITY = 0.1;
+const REGIONAL_MODE_SCALE_THRESHOLD = 3000;
+const REGIONAL_MODE_RETURN_SCALE = 1600;
+const REGIONAL_MODE_COUNTRY_CODES = new Set(["KOR"]);
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
@@ -31,7 +38,7 @@ const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
 const FOCUSED_SCALE_BY_COUNTRY_CODE: Record<string, number> = {
   FRA: 620,
   JPN: 1500,
-  KOR: 2100,
+  KOR: 3000,
 };
 
 type WorldMapProps = {
@@ -86,6 +93,10 @@ function getFocusedScale(countryCode: string) {
   return FOCUSED_SCALE_BY_COUNTRY_CODE[countryCode] ?? FOCUSED_SCALE;
 }
 
+function canUseRegionalMode(countryCode: string | null) {
+  return countryCode ? REGIONAL_MODE_COUNTRY_CODES.has(countryCode) : false;
+}
+
 function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
   const labelMap: Record<AdminBoundaryLoadStatus, string | null> = {
     idle: null,
@@ -132,9 +143,11 @@ export function WorldMap({
   const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
   const [selectedCountryLabel, setSelectedCountryLabel] = useState<string | null>(null);
   const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
+  const [mapMode, setMapMode] = useState<MapMode>("globe");
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const focusAnimationRef = useRef<number | null>(null);
   const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
+  const isRegionalMode = mapMode === "regional" && Boolean(selectedCountryCode && selectedCountryName);
 
   useEffect(() => {
     return () => {
@@ -156,12 +169,24 @@ export function WorldMap({
 
   function handleResetView() {
     cancelFocusAnimation();
+    setMapMode("globe");
     setScale(DEFAULT_SCALE);
     setRotation([0, -15, 0]);
   }
 
   function applyScaleDelta(delta: number) {
-    setScale((previousScale) => clampScale(previousScale + delta));
+    const nextScale = clampScale(scale + delta);
+
+    setScale(nextScale);
+    enterRegionalModeIfNeeded(selectedCountryCode, nextScale);
+  }
+
+  function enterRegionalModeIfNeeded(countryCode: string | null, nextScale: number) {
+    if (mapMode !== "globe" || !canUseRegionalMode(countryCode) || nextScale < REGIONAL_MODE_SCALE_THRESHOLD) {
+      return;
+    }
+
+    setMapMode("regional");
   }
 
   function cancelFocusAnimation() {
@@ -174,13 +199,17 @@ export function WorldMap({
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (isRegionalMode) {
+      return;
+    }
+
     cancelFocusAnimation();
     setIsDragging(true);
     dragStartRef.current = { x: event.clientX, y: event.clientY };
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!dragStartRef.current) {
+    if (isRegionalMode || !dragStartRef.current) {
       return;
     }
 
@@ -188,8 +217,8 @@ export function WorldMap({
     const deltaY = event.clientY - dragStartRef.current.y;
 
     setRotation(([longitude, latitude, gamma]) => [
-      longitude + deltaX * 0.25,
-      clampLatitude(latitude - deltaY * 0.2),
+      longitude + deltaX * DRAG_LONGITUDE_SENSITIVITY,
+      clampLatitude(latitude - deltaY * DRAG_LATITUDE_SENSITIVITY),
       gamma,
     ]);
 
@@ -202,12 +231,16 @@ export function WorldMap({
   }
 
   function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
+    if (isRegionalMode) {
+      return;
+    }
+
     event.preventDefault();
     cancelFocusAnimation();
     applyScaleDelta(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
   }
 
-  function focusCoordinates(coordinates: [number, number], targetScale: number) {
+  function focusCoordinates(coordinates: [number, number], targetScale: number, countryCode: string | null = null) {
     cancelFocusAnimation();
 
     const [longitude, latitude] = coordinates;
@@ -232,7 +265,15 @@ export function WorldMap({
         fromRotation[1] + latitudeDelta * easedProgress,
         fromRotation[2],
       ]);
-      setScale(fromScale + (nextScale - fromScale) * easedProgress);
+      const animatedScale = fromScale + (nextScale - fromScale) * easedProgress;
+
+      setScale(animatedScale);
+
+      if (canUseRegionalMode(countryCode) && animatedScale >= REGIONAL_MODE_SCALE_THRESHOLD) {
+        setMapMode("regional");
+        focusAnimationRef.current = null;
+        return;
+      }
 
       if (progress < 1) {
         focusAnimationRef.current = window.requestAnimationFrame(animate);
@@ -246,13 +287,19 @@ export function WorldMap({
   }
 
   function focusCountry(centroid: [number, number], countryCode: string) {
-    focusCoordinates(centroid, getFocusedScale(countryCode));
+    focusCoordinates(centroid, getFocusedScale(countryCode), countryCode);
   }
 
   function handleSelectRegion(region: SelectedRegion) {
     setSelectedCountryLabel(region.regionName);
     setSelectedMarkerCoordinates(region.coordinates);
     onSelectRegion(region);
+  }
+
+  function handleReturnToGlobe() {
+    cancelFocusAnimation();
+    setMapMode("globe");
+    setScale((previousScale) => Math.min(previousScale, REGIONAL_MODE_RETURN_SCALE));
   }
 
   return (
@@ -268,7 +315,7 @@ export function WorldMap({
 
       <div
         className={`weather-map-stage relative h-[56vh] min-h-[320px] max-h-[620px] w-full overflow-hidden ${
-          isDragging ? "cursor-grabbing" : "cursor-grab"
+          isRegionalMode ? "cursor-default" : isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -279,7 +326,19 @@ export function WorldMap({
         <div className="weather-map-aurora" aria-hidden="true" />
         <div className="weather-map-grid" aria-hidden="true" />
 
-        {hasMounted ? (
+        {isRegionalMode && selectedCountryCode && selectedCountryName ? (
+          <RegionalMap
+            boundaries={boundaries}
+            countryCode={selectedCountryCode}
+            countryName={selectedCountryName}
+            selectedRegionCode={selectedRegionCode}
+            selectedLabel={selectedCountryLabel}
+            selectedMarkerCoordinates={selectedMarkerCoordinates}
+            statusLabel={adminBoundaryStatusLabel}
+            onSelectRegion={handleSelectRegion}
+            onReturnToGlobe={handleReturnToGlobe}
+          />
+        ) : hasMounted ? (
           <ComposableMap
             projection="geoOrthographic"
             projectionConfig={{ scale, rotate: rotation }}
@@ -333,6 +392,7 @@ export function WorldMap({
                       onMouseEnter={() => setHoveredCountryName(countryName)}
                       onMouseLeave={() => setHoveredCountryName(null)}
                       onClick={() => {
+                        setMapMode("globe");
                         setSelectedCountryLabel(countryName);
                         setSelectedMarkerCoordinates(centroid);
                         focusCountry(centroid, countryCode);
@@ -402,6 +462,7 @@ export function WorldMap({
           </div>
         )}
 
+        {!isRegionalMode ? (
         <div className="absolute right-2 top-2 z-20 flex gap-2">
           <button
             type="button"
@@ -428,8 +489,9 @@ export function WorldMap({
             Reset
           </button>
         </div>
+        ) : null}
 
-        {adminBoundaryStatusLabel ? (
+        {!isRegionalMode && adminBoundaryStatusLabel ? (
           <div
             role="status"
             className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-white/75 bg-white/90 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-600 dark:bg-slate-900/86 dark:text-slate-100"

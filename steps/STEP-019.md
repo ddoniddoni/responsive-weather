@@ -1,5 +1,7 @@
 # STEP-019: Country forecast expansion plan
 
+> Note: Detailed regional map mode is tracked separately in `STEP-020.md`.
+
 ## Goal
 
 - Expand the selected-country weather panel from current conditions into hourly and weekly forecast views.
