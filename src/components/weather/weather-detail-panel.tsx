@@ -18,10 +18,16 @@ export function WeatherDetailPanel({ weather, theme }: WeatherDetailPanelProps) 
     );
   }
 
+  const title = weather.regionName ?? weather.countryName;
+  const subtitle = weather.regionName ? `${weather.countryName} / ${weather.regionCode}` : weather.countryCode;
+
   return (
     <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{weather.countryName}</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+          <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">{subtitle}</p>
+        </div>
         <WeatherReactiveButton condition={weather.condition} theme={theme}>
           {weather.condition}
         </WeatherReactiveButton>
