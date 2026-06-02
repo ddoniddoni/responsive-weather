@@ -94,3 +94,21 @@ export function getAdminBoundaryName(feature: AdminBoundaryFeature) {
 
   return "Administrative area";
 }
+
+export function getAdminBoundaryCode(feature: AdminBoundaryFeature) {
+  const { shapeISO, shapeID, shapeName } = feature.properties;
+
+  if (typeof shapeISO === "string" && shapeISO.trim().length > 0) {
+    return shapeISO;
+  }
+
+  if (typeof shapeID === "string" && shapeID.trim().length > 0) {
+    return shapeID;
+  }
+
+  if (typeof shapeName === "string" && shapeName.trim().length > 0) {
+    return shapeName;
+  }
+
+  return String(feature.id ?? "admin-boundary");
+}

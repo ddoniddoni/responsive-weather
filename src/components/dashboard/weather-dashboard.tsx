@@ -5,12 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { DashboardInsights } from "@/components/dashboard/dashboard-insights";
 import { WorldMap } from "@/components/map/world-map";
 import { WeatherDetailPanel } from "@/components/weather/weather-detail-panel";
-import { getMockWeatherByCountry } from "@/lib/weather/mock-weather";
-import type { SelectedCountry } from "@/types/weather-data";
+import { getMockWeatherByCountry, getMockWeatherByRegion } from "@/lib/weather/mock-weather";
+import type { SelectedCountry, SelectedRegion } from "@/types/weather-data";
 
 export function WeatherDashboard() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<SelectedRegion | null>(null);
   const isDark = theme === "dark";
 
   useEffect(() => {
@@ -19,12 +20,21 @@ export function WeatherDashboard() {
   }, [theme]);
 
   const weather = useMemo(() => {
+    if (selectedRegion) {
+      return getMockWeatherByRegion(selectedRegion);
+    }
+
     if (!selectedCountry) {
       return null;
     }
 
     return getMockWeatherByCountry(selectedCountry.code, selectedCountry.name);
-  }, [selectedCountry]);
+  }, [selectedCountry, selectedRegion]);
+
+  function handleSelectCountry(country: SelectedCountry) {
+    setSelectedCountry(country);
+    setSelectedRegion(null);
+  }
 
   return (
     <div className={`min-h-screen p-4 transition-colors md:p-6 ${isDark ? "bg-slate-900" : "bg-slate-50"}`}>
@@ -53,8 +63,11 @@ export function WeatherDashboard() {
       >
         <WorldMap
           selectedCountryCode={selectedCountry?.code ?? null}
+          selectedCountryName={selectedCountry?.name ?? null}
+          selectedRegionCode={selectedRegion?.regionCode ?? null}
           selectedWeatherCondition={weather?.condition ?? null}
-          onSelectCountry={setSelectedCountry}
+          onSelectCountry={handleSelectCountry}
+          onSelectRegion={setSelectedRegion}
         />
         {selectedCountry ? <WeatherDetailPanel weather={weather} theme={theme} /> : null}
       </main>

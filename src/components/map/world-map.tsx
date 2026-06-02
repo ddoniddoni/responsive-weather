@@ -10,7 +10,7 @@ import { WeatherConditionMarker } from "@/components/map/weather-condition-marke
 import { useAdminBoundaries } from "@/hooks/use-admin-boundaries";
 import type { AdminBoundaryLoadStatus } from "@/types/admin-boundary";
 import type { WeatherCondition } from "@/types/weather";
-import type { SelectedCountry } from "@/types/weather-data";
+import type { SelectedCountry, SelectedRegion } from "@/types/weather-data";
 
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
@@ -30,8 +30,11 @@ const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
 
 type WorldMapProps = {
   selectedCountryCode: string | null;
+  selectedCountryName: string | null;
+  selectedRegionCode: string | null;
   selectedWeatherCondition: WeatherCondition | null;
   onSelectCountry: (country: SelectedCountry) => void;
+  onSelectRegion: (region: SelectedRegion) => void;
 };
 
 type GeographyProperties = {
@@ -87,8 +90,11 @@ function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
 
 export function WorldMap({
   selectedCountryCode,
+  selectedCountryName,
+  selectedRegionCode,
   selectedWeatherCondition,
   onSelectCountry,
+  onSelectRegion,
 }: WorldMapProps) {
   const { boundaries, status: adminBoundaryStatus } = useAdminBoundaries(selectedCountryCode);
   const [scale, setScale] = useState(DEFAULT_SCALE);
@@ -210,6 +216,12 @@ export function WorldMap({
     focusAnimationRef.current = window.requestAnimationFrame(animate);
   }
 
+  function handleSelectRegion(region: SelectedRegion) {
+    setSelectedCountryLabel(region.regionName);
+    setSelectedMarkerCoordinates(region.coordinates);
+    onSelectRegion(region);
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-[0_20px_60px_rgba(12,74,110,0.12)] dark:border-slate-700 dark:bg-slate-900">
       <div className="flex h-12 items-center justify-between border-b border-cyan-100 bg-gradient-to-r from-cyan-50 via-white to-emerald-50 px-4 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950">
@@ -308,7 +320,13 @@ export function WorldMap({
             }
           </Geographies>
 
-          <AdminBoundaryLayer boundaries={boundaries} />
+          <AdminBoundaryLayer
+            boundaries={boundaries}
+            countryCode={selectedCountryCode}
+            countryName={selectedCountryName}
+            selectedRegionCode={selectedRegionCode}
+            onSelectRegion={handleSelectRegion}
+          />
 
           <Sphere
             id="globe-shade"

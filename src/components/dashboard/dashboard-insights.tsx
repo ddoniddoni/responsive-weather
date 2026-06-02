@@ -5,6 +5,8 @@ type DashboardInsightsProps = {
 };
 
 export function DashboardInsights({ weather }: DashboardInsightsProps) {
+  const selectedLocationName = weather?.regionName ?? weather?.countryName;
+
   return (
     <section className="mx-auto mt-4 grid w-full max-w-7xl grid-cols-1 gap-4 lg:grid-cols-3">
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -14,10 +16,10 @@ export function DashboardInsights({ weather }: DashboardInsightsProps) {
         </p>
       </article>
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Selected Country</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Selected Location</h3>
         {weather ? (
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-            {weather.countryName}: {weather.temperature}°C, {weather.condition}, humidity {weather.humidity}%.
+            {selectedLocationName}: {weather.temperature}°C, {weather.condition}, humidity {weather.humidity}%.
           </p>
         ) : (
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
