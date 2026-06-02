@@ -1,7 +1,7 @@
 "use client";
 
 import { geoCentroid } from "d3-geo";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from "react-simple-maps";
 
@@ -14,7 +14,9 @@ const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
 const DEFAULT_SCALE = 220;
 const MIN_SCALE = 160;
 const MAX_SCALE = 1200;
+const FOCUSED_SCALE = 440;
 const ZOOM_STEP = 60;
+const FOCUS_ANIMATION_DURATION = 420;
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
@@ -52,6 +54,22 @@ function getCountryCode(feature: GeographyFeature, countryName: string) {
   );
 }
 
+function clampScale(scale: number) {
+  return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+}
+
+function clampLatitude(latitude: number) {
+  return Math.max(-60, Math.min(60, latitude));
+}
+
+function getShortestAngleDelta(from: number, to: number) {
+  return ((((to - from) % 360) + 540) % 360) - 180;
+}
+
+function easeOutCubic(progress: number) {
+  return 1 - (1 - progress) ** 3;
+}
+
 export function WorldMap({
   selectedCountryCode,
   selectedWeatherCondition,
@@ -64,25 +82,47 @@ export function WorldMap({
   const [selectedCountryLabel, setSelectedCountryLabel] = useState<string | null>(null);
   const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const focusAnimationRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (focusAnimationRef.current !== null) {
+        window.cancelAnimationFrame(focusAnimationRef.current);
+      }
+    };
+  }, []);
 
   function handleZoomIn() {
+    cancelFocusAnimation();
     applyScaleDelta(ZOOM_STEP);
   }
 
   function handleZoomOut() {
+    cancelFocusAnimation();
     applyScaleDelta(-ZOOM_STEP);
   }
 
   function handleResetView() {
+    cancelFocusAnimation();
     setScale(DEFAULT_SCALE);
     setRotation([0, -15, 0]);
   }
 
   function applyScaleDelta(delta: number) {
-    setScale((previousScale) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, previousScale + delta)));
+    setScale((previousScale) => clampScale(previousScale + delta));
+  }
+
+  function cancelFocusAnimation() {
+    if (focusAnimationRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(focusAnimationRef.current);
+    focusAnimationRef.current = null;
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    cancelFocusAnimation();
     setIsDragging(true);
     dragStartRef.current = { x: event.clientX, y: event.clientY };
   }
@@ -97,7 +137,7 @@ export function WorldMap({
 
     setRotation(([longitude, latitude, gamma]) => [
       longitude + deltaX * 0.25,
-      Math.max(-60, Math.min(60, latitude - deltaY * 0.2)),
+      clampLatitude(latitude - deltaY * 0.2),
       gamma,
     ]);
 
@@ -111,7 +151,46 @@ export function WorldMap({
 
   function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
     event.preventDefault();
+    cancelFocusAnimation();
     applyScaleDelta(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
+  }
+
+  function focusCountry(centroid: [number, number]) {
+    cancelFocusAnimation();
+
+    const [longitude, latitude] = centroid;
+    const fromRotation = rotation;
+    const targetRotation: [number, number, number] = [
+      -longitude,
+      clampLatitude(-latitude),
+      fromRotation[2],
+    ];
+    const fromScale = scale;
+    const targetScale = Math.max(FOCUSED_SCALE, fromScale);
+    const startedAt = window.performance.now();
+    const longitudeDelta = getShortestAngleDelta(fromRotation[0], targetRotation[0]);
+    const latitudeDelta = targetRotation[1] - fromRotation[1];
+
+    function animate(now: number) {
+      const progress = Math.min((now - startedAt) / FOCUS_ANIMATION_DURATION, 1);
+      const easedProgress = easeOutCubic(progress);
+
+      setRotation([
+        fromRotation[0] + longitudeDelta * easedProgress,
+        fromRotation[1] + latitudeDelta * easedProgress,
+        fromRotation[2],
+      ]);
+      setScale(fromScale + (targetScale - fromScale) * easedProgress);
+
+      if (progress < 1) {
+        focusAnimationRef.current = window.requestAnimationFrame(animate);
+        return;
+      }
+
+      focusAnimationRef.current = null;
+    }
+
+    focusAnimationRef.current = window.requestAnimationFrame(animate);
   }
 
   return (
@@ -185,6 +264,7 @@ export function WorldMap({
                     onClick={() => {
                       setSelectedCountryLabel(countryName);
                       setSelectedMarkerCoordinates(centroid);
+                      focusCountry(centroid);
                       onSelectCountry({ code: countryCode, name: countryName });
                     }}
                     className="cursor-pointer outline-none transition-colors"
