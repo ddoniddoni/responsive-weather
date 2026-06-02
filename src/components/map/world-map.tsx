@@ -16,9 +16,9 @@ const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m
 const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
 const DEFAULT_SCALE = 220;
 const MIN_SCALE = 160;
-const MAX_SCALE = 1800;
+const MAX_SCALE = 5200;
 const FOCUSED_SCALE = 520;
-const ZOOM_STEP = 60;
+const ZOOM_STEP = 220;
 const FOCUS_ANIMATION_DURATION = 420;
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
@@ -30,8 +30,8 @@ const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
 
 const FOCUSED_SCALE_BY_COUNTRY_CODE: Record<string, number> = {
   FRA: 620,
-  JPN: 920,
-  KOR: 1080,
+  JPN: 1500,
+  KOR: 2100,
 };
 
 type WorldMapProps = {
