@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { fetchAdminBoundaries } from "@/lib/map/admin-boundaries";
+import { parseAdminBoundaryCollection } from "@/lib/map/admin-boundaries";
 import type {
   AdminBoundaryFeatureCollection,
   AdminBoundaryLevel,
@@ -19,6 +19,28 @@ type StoredAdminBoundaryState = {
   status: Exclude<AdminBoundaryLoadStatus, "idle" | "loading">;
 };
 
+async function fetchAdminBoundariesFromProxy(
+  countryCode: string,
+  level: AdminBoundaryLevel,
+  signal: AbortSignal,
+) {
+  const searchParams = new URLSearchParams({
+    countryCode,
+    level,
+  });
+  const response = await fetch(`/api/admin-boundaries?${searchParams.toString()}`, { signal });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to load ${level} boundaries for ${countryCode}.`);
+  }
+
+  return parseAdminBoundaryCollection(await response.json());
+}
+
 export function useAdminBoundaries(
   countryCode: string | null,
   level: AdminBoundaryLevel = "ADM1",
@@ -32,7 +54,7 @@ export function useAdminBoundaries(
 
     const abortController = new AbortController();
 
-    fetchAdminBoundaries(countryCode, level, abortController.signal)
+    fetchAdminBoundariesFromProxy(countryCode, level, abortController.signal)
       .then((nextBoundaries) => {
         if (!nextBoundaries) {
           setStoredState({

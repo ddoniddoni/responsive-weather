@@ -79,10 +79,10 @@ function easeOutCubic(progress: number) {
 function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
   const labelMap: Record<AdminBoundaryLoadStatus, string | null> = {
     idle: null,
-    loading: "Loading ADM1 boundaries",
-    success: "ADM1 boundaries visible",
-    error: "ADM1 boundaries unavailable",
-    unsupported: "ADM1 boundaries not supported",
+    loading: "Loading regional boundaries",
+    success: null,
+    error: "Regional boundaries temporarily unavailable",
+    unsupported: "Regional boundaries are not available here",
   };
 
   return labelMap[status];
@@ -426,7 +426,7 @@ export function WorldMap({
         <p>Drag to rotate, use +/- or wheel to zoom, and click a country for details.</p>
         {selectedCountryCode ? (
           <p>
-            ADM1 data:{" "}
+            Regional data:{" "}
             <a
               href="https://www.geoboundaries.org/"
               target="_blank"
