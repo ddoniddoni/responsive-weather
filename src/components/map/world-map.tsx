@@ -310,6 +310,14 @@ export function WorldMap({
             />
             <Graticule stroke="rgba(240,249,255,0.32)" strokeWidth={0.35} />
 
+            <AdminBoundaryLayer
+              boundaries={boundaries}
+              countryCode={selectedCountryCode}
+              countryName={selectedCountryName}
+              selectedRegionCode={selectedRegionCode}
+              onSelectRegion={handleSelectRegion}
+            />
+
             <Geographies geography={WORLD_GEO_URL}>
               {({ geographies }) =>
                 geographies.map((geography, index) => {
@@ -332,10 +340,12 @@ export function WorldMap({
                         focusCountry(centroid, countryCode);
                         onSelectCountry({ code: countryCode, name: countryName });
                       }}
-                      className="cursor-pointer outline-none transition-colors"
+                      className={`outline-none transition-colors ${
+                        isSelected ? "pointer-events-none" : "cursor-pointer"
+                      }`}
                       style={{
                         default: {
-                          fill: defaultFill,
+                          fill: isSelected ? "rgba(183, 228, 199, 0.18)" : defaultFill,
                           stroke: isSelected ? "#111827" : "rgba(14, 116, 144, 0.62)",
                           strokeWidth: isSelected ? 1.8 : 0.75,
                         },
@@ -355,14 +365,6 @@ export function WorldMap({
                 })
               }
             </Geographies>
-
-            <AdminBoundaryLayer
-              boundaries={boundaries}
-              countryCode={selectedCountryCode}
-              countryName={selectedCountryName}
-              selectedRegionCode={selectedRegionCode}
-              onSelectRegion={handleSelectRegion}
-            />
 
             <Sphere
               id="globe-shade"
