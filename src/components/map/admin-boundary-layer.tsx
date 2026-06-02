@@ -1,8 +1,11 @@
-import { geoCentroid } from "d3-geo";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { Geographies, Geography } from "react-simple-maps";
 
-import { getAdminBoundaryCode, getAdminBoundaryName } from "@/lib/map/admin-boundaries";
+import {
+  getAdminBoundaryCenter,
+  getAdminBoundaryCode,
+  getAdminBoundaryName,
+} from "@/lib/map/admin-boundaries";
 import type { AdminBoundaryFeature, AdminBoundaryFeatureCollection } from "@/types/admin-boundary";
 import type { SelectedRegion } from "@/types/weather-data";
 
@@ -34,12 +37,18 @@ export function AdminBoundaryLayer({
       return;
     }
 
+    const coordinates = getAdminBoundaryCenter(feature);
+
+    if (!coordinates) {
+      return;
+    }
+
     onSelectRegion({
       countryCode,
       countryName,
       regionCode: getAdminBoundaryCode(feature),
       regionName: getAdminBoundaryName(feature),
-      coordinates: geoCentroid(feature as never) as [number, number],
+      coordinates,
     });
   }
 

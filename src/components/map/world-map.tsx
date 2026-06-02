@@ -18,7 +18,6 @@ const DEFAULT_SCALE = 220;
 const MIN_SCALE = 160;
 const MAX_SCALE = 1800;
 const FOCUSED_SCALE = 520;
-const REGION_FOCUSED_SCALE = 1020;
 const ZOOM_STEP = 60;
 const FOCUS_ANIMATION_DURATION = 420;
 
@@ -253,7 +252,6 @@ export function WorldMap({
   function handleSelectRegion(region: SelectedRegion) {
     setSelectedCountryLabel(region.regionName);
     setSelectedMarkerCoordinates(region.coordinates);
-    focusCoordinates(region.coordinates, REGION_FOCUSED_SCALE);
     onSelectRegion(region);
   }
 

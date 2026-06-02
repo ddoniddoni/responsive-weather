@@ -15,6 +15,8 @@
 - Fix selected-country marker overlays so they do not block regional boundary clicks.
 - Increase focus scale for small countries where ADM1 regions need more room.
 - Keep country selection above regional boundaries except for the currently selected country.
+- Use stable GeoJSON bounding-box centers for selected regional markers.
+- Keep the globe position stable when selecting a region inside the focused country.
 
 ## Completion Criteria
 
@@ -25,6 +27,7 @@
 - Korea can be selected at a scale where multiple regional boundaries are reachable.
 - Decorative map markers and shade layers do not block country or region clicks.
 - Selecting a region does not trap the map; other countries remain clickable afterward.
+- Selecting a region does not rotate the globe away from the selected country.
 - `npm run lint` and `npm run build` pass.
 
 ## Checklist
@@ -39,5 +42,7 @@
 - [x] Prevent decorative map markers from intercepting clicks
 - [x] Increase Korea/Japan focus scale for regional selection
 - [x] Reorder country and regional boundary layers so other countries stay clickable
+- [x] Replace regional `geoCentroid()` selection coordinates with bbox centers
+- [x] Stop region clicks from triggering globe refocus
 - [x] Verify lint/build
 - [x] Commit and push Step 018 branch

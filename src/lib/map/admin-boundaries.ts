@@ -15,6 +15,26 @@ function isAdminBoundaryFeature(value: unknown): value is AdminBoundaryFeature {
   return "geometry" in value;
 }
 
+function collectCoordinatePositions(value: unknown, positions: Array<[number, number]>) {
+  if (!Array.isArray(value)) {
+    return;
+  }
+
+  const [longitude, latitude] = value;
+
+  if (typeof longitude === "number" && typeof latitude === "number") {
+    if (longitude >= -180 && longitude <= 180 && latitude >= -90 && latitude <= 90) {
+      positions.push([longitude, latitude]);
+    }
+
+    return;
+  }
+
+  for (const entry of value) {
+    collectCoordinatePositions(entry, positions);
+  }
+}
+
 export function parseAdminBoundaryCollection(value: unknown): AdminBoundaryFeatureCollection {
   if (!isRecord(value) || value.type !== "FeatureCollection" || !Array.isArray(value.features)) {
     throw new Error("Invalid administrative boundary GeoJSON response.");
@@ -62,4 +82,32 @@ export function getAdminBoundaryCode(feature: AdminBoundaryFeature) {
   }
 
   return String(feature.id ?? "admin-boundary");
+}
+
+export function getAdminBoundaryCenter(feature: AdminBoundaryFeature): [number, number] | null {
+  if (!isRecord(feature.geometry) || !("coordinates" in feature.geometry)) {
+    return null;
+  }
+
+  const positions: Array<[number, number]> = [];
+
+  collectCoordinatePositions(feature.geometry.coordinates, positions);
+
+  if (positions.length === 0) {
+    return null;
+  }
+
+  let minLongitude = positions[0][0];
+  let maxLongitude = positions[0][0];
+  let minLatitude = positions[0][1];
+  let maxLatitude = positions[0][1];
+
+  for (const [longitude, latitude] of positions) {
+    minLongitude = Math.min(minLongitude, longitude);
+    maxLongitude = Math.max(maxLongitude, longitude);
+    minLatitude = Math.min(minLatitude, latitude);
+    maxLatitude = Math.max(maxLatitude, latitude);
+  }
+
+  return [(minLongitude + maxLongitude) / 2, (minLatitude + maxLatitude) / 2];
 }
