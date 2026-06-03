@@ -10,10 +10,13 @@ type WeatherDetailPanelProps = {
 export function WeatherDetailPanel({ weather, theme }: WeatherDetailPanelProps) {
   if (!weather) {
     return (
-      <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Weather Detail</h2>
-        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-          지도를 클릭해서 국가를 선택하면 상세 날씨가 여기에 표시됩니다.
+      <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+          Detail Panel
+        </p>
+        <h2 className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-100">Select a location</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+          Choose a country on the map to review temperature, wind, humidity, and condition-specific interface states.
         </p>
       </aside>
     );
@@ -21,6 +24,10 @@ export function WeatherDetailPanel({ weather, theme }: WeatherDetailPanelProps) 
 
   const title = weather.regionName ?? weather.countryName;
   const subtitle = weather.regionName ? `${weather.countryName} / ${weather.regionCode}` : weather.countryCode;
+  const updatedAt = new Intl.DateTimeFormat("en", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date());
   const metricCards = [
     {
       label: "Temperature",
@@ -45,18 +52,37 @@ export function WeatherDetailPanel({ weather, theme }: WeatherDetailPanelProps) 
   ];
 
   return (
-    <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-          <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">{subtitle}</p>
+    <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+            Weather Detail
+          </p>
+          <h2 className="mt-2 truncate text-xl font-semibold text-slate-950 dark:text-slate-100">{title}</h2>
+          <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
         </div>
         <WeatherReactiveButton condition={weather.condition} theme={theme}>
           {weather.condition}
         </WeatherReactiveButton>
       </div>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{weather.description}</p>
-      <dl className="mt-5 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+      <div className="mt-5 border-y border-slate-200 py-5 dark:border-slate-800">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+              Current
+            </p>
+            <p className="mt-2 font-mono text-5xl font-semibold leading-none tracking-normal text-slate-950 dark:text-white">
+              {weather.temperature}°C
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Updated</p>
+            <p className="mt-1 font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">{updatedAt}</p>
+          </div>
+        </div>
+        <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">{weather.description}</p>
+      </div>
+      <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         {metricCards.map((metricCard) => (
           <WeatherMetricCard
             key={metricCard.label}

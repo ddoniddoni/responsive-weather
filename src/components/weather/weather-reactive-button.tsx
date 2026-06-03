@@ -21,17 +21,17 @@ export function WeatherReactiveButton({
 }: WeatherReactiveButtonProps) {
   const themeClassName =
     theme === "dark"
-      ? "border-slate-600 bg-slate-800 text-slate-100 hover:bg-slate-700"
+      ? "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
       : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50";
 
   return (
     <button
       type={type}
-      className={`weather-button weather-condition-pill relative inline-flex h-10 min-w-24 items-center justify-center overflow-hidden rounded-xl border px-3 text-xs font-semibold shadow-[0_4px_14px_rgba(15,23,42,0.1)] transition-colors ${themeClassName} ${className ?? ""}`}
+      className={`weather-button weather-condition-pill relative inline-flex h-9 min-w-24 items-center justify-center overflow-hidden rounded-md border px-3 text-xs font-semibold capitalize shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 ${themeClassName} ${className ?? ""}`}
       {...props}
     >
       <WeatherConditionEffects condition={condition} />
-      <span className="relative z-10 truncate capitalize">{children}</span>
+      <span className="relative z-10 truncate">{children}</span>
     </button>
   );
 }
