@@ -43,10 +43,12 @@ const FOCUSED_SCALE_BY_COUNTRY_CODE: Record<string, number> = {
 };
 
 type WorldMapProps = {
+  activeLayerId?: string;
   selectedCountryCode: string | null;
   selectedCountryName: string | null;
   selectedRegionCode: string | null;
   selectedWeatherCondition: WeatherCondition | null;
+  variant?: "panel" | "immersive";
   onSelectCountry: (country: SelectedCountry) => void;
   onSelectRegion: (region: SelectedRegion) => void;
 };
@@ -121,10 +123,12 @@ function getServerMountSnapshot() {
 }
 
 export function WorldMap({
+  activeLayerId = "temperature",
   selectedCountryCode,
   selectedCountryName,
   selectedRegionCode,
   selectedWeatherCondition,
+  variant = "panel",
   onSelectCountry,
   onSelectRegion,
 }: WorldMapProps) {
@@ -147,6 +151,7 @@ export function WorldMap({
   const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
   const isRegionalMode = mapMode === "regional" && Boolean(selectedCountryCode && selectedCountryName);
   const canShowDetailButton = mapMode === "globe" && adminBoundaryStatus === "success";
+  const isImmersive = variant === "immersive";
 
   useEffect(() => {
     return () => {
@@ -329,7 +334,15 @@ export function WorldMap({
   }
 
   return (
-    <div className="min-w-0 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <div
+      className={
+        isImmersive
+          ? "h-full min-w-0 max-w-full overflow-hidden bg-slate-100 dark:bg-slate-950"
+          : "min-w-0 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950"
+      }
+      data-weather-layer={activeLayerId}
+    >
+      {!isImmersive ? (
       <div className="flex h-12 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950">
         <p className="min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
           {hoveredCountryName ?? selectedCountryLabel ?? "Select a country on the globe"}
@@ -338,9 +351,12 @@ export function WorldMap({
           {isRegionalMode ? "Regional Detail" : "Interactive Globe"}
         </span>
       </div>
+      ) : null}
 
       <div
-        className={`weather-map-stage relative h-[56vh] min-h-[320px] max-h-[620px] w-full min-w-0 overflow-hidden ${
+        className={`weather-map-stage relative w-full min-w-0 overflow-hidden ${
+          isImmersive ? "h-full min-h-[720px] max-h-none" : "h-[56vh] min-h-[320px] max-h-[620px]"
+        } ${
           isRegionalMode ? "cursor-default" : isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
         onPointerDown={handlePointerDown}
@@ -497,7 +513,7 @@ export function WorldMap({
         )}
 
         {!isRegionalMode ? (
-          <div className="absolute right-3 top-3 z-20 flex gap-2">
+          <div className={`absolute right-3 z-20 flex gap-2 ${isImmersive ? "top-48 md:top-24" : "top-3"}`}>
             <button
               type="button"
               onClick={handleZoomIn}
@@ -535,6 +551,7 @@ export function WorldMap({
         ) : null}
       </div>
 
+      {!isImmersive ? (
       <div className="flex flex-col gap-1 border-t border-slate-200 px-4 py-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
         <p>
           {isRegionalMode
@@ -555,6 +572,7 @@ export function WorldMap({
           </p>
         ) : null}
       </div>
+      ) : null}
     </div>
   );
 }

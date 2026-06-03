@@ -217,10 +217,63 @@ body {
     linear-gradient(135deg, #dbe7ef 0%, #eff4f7 46%, #d8e0e7 100%);
 }
 
+[data-weather-layer="temperature"] .weather-map-stage {
+  background:
+    linear-gradient(90deg, rgba(59, 130, 246, 0.22), rgba(34, 197, 94, 0.24) 36%, rgba(234, 179, 8, 0.3) 62%, rgba(239, 68, 68, 0.3)),
+    linear-gradient(135deg, #d9f1f4 0%, #f4e0ad 42%, #d9998d 100%);
+}
+
+[data-weather-layer="feels-like"] .weather-map-stage {
+  background:
+    linear-gradient(120deg, rgba(14, 165, 233, 0.24), rgba(245, 158, 11, 0.3), rgba(190, 18, 60, 0.28)),
+    linear-gradient(135deg, #d7ebf5 0%, #f1d6a2 48%, #c98787 100%);
+}
+
+[data-weather-layer="precipitation"] .weather-map-stage,
+[data-weather-layer="radar"] .weather-map-stage {
+  background:
+    linear-gradient(105deg, rgba(14, 116, 144, 0.26), rgba(59, 130, 246, 0.2) 36%, rgba(168, 85, 247, 0.24) 70%, rgba(236, 72, 153, 0.22)),
+    linear-gradient(135deg, #dbeafe 0%, #bcd7ef 48%, #d5c7ea 100%);
+}
+
+[data-weather-layer="wind"] .weather-map-stage {
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.28) 0 2px, transparent 2px 24px),
+    linear-gradient(105deg, rgba(20, 184, 166, 0.22), rgba(59, 130, 246, 0.24), rgba(15, 23, 42, 0.2)),
+    linear-gradient(135deg, #d8f3f1 0%, #cddff1 54%, #c9d0d8 100%);
+}
+
+[data-weather-layer="clouds"] .weather-map-stage,
+[data-weather-layer="humidity"] .weather-map-stage {
+  background:
+    linear-gradient(120deg, rgba(148, 163, 184, 0.3), rgba(226, 232, 240, 0.42), rgba(14, 165, 233, 0.18)),
+    linear-gradient(135deg, #e2e8f0 0%, #f8fafc 48%, #cbd5e1 100%);
+}
+
+[data-weather-layer="pressure"] .weather-map-stage {
+  background:
+    radial-gradient(circle at 32% 44%, rgba(59, 130, 246, 0.25), transparent 26%),
+    radial-gradient(circle at 72% 46%, rgba(239, 68, 68, 0.24), transparent 28%),
+    linear-gradient(135deg, #dbeafe 0%, #f8fafc 50%, #fee2e2 100%);
+}
+
 html.dark .weather-map-stage {
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(15, 23, 42, 0)),
     linear-gradient(135deg, #0f172a 0%, #111827 48%, #07111f 100%);
+}
+
+html.dark [data-weather-layer="temperature"] .weather-map-stage {
+  background:
+    linear-gradient(90deg, rgba(37, 99, 235, 0.34), rgba(22, 163, 74, 0.32) 36%, rgba(202, 138, 4, 0.36) 62%, rgba(185, 28, 28, 0.34)),
+    linear-gradient(135deg, #0f172a 0%, #3f2f18 48%, #4a1f24 100%);
+}
+
+html.dark [data-weather-layer="wind"] .weather-map-stage {
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 24px),
+    linear-gradient(105deg, rgba(20, 184, 166, 0.2), rgba(37, 99, 235, 0.26), rgba(15, 23, 42, 0.34)),
+    linear-gradient(135deg, #052e2b 0%, #0f172a 54%, #020617 100%);
 }
 
 .weather-map-aurora {
