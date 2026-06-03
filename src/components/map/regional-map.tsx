@@ -151,7 +151,7 @@ export function RegionalMap({
   }
 
   return (
-    <div className="relative z-10 h-full w-full bg-[linear-gradient(135deg,#dff6ff_0%,#e7f9f3_48%,#f8fafc_100%)] dark:bg-[linear-gradient(135deg,#0f172a_0%,#082f49_52%,#111827_100%)]">
+    <div className="relative z-10 h-full w-full bg-[linear-gradient(135deg,#e5eaf0_0%,#f4f6f8_52%,#dce3ea_100%)] dark:bg-[linear-gradient(135deg,#0f172a_0%,#111827_52%,#07111f_100%)]">
       <svg
         viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
         className="h-full w-full"
@@ -186,9 +186,9 @@ export function RegionalMap({
                   event.preventDefault();
                   handleSelectRegion(feature);
                 }}
-                className="cursor-pointer outline-none transition-colors"
-                fill={isSelected ? "rgba(250, 204, 21, 0.76)" : "rgba(236, 253, 245, 0.94)"}
-                stroke={isSelected ? "#c2410c" : "rgba(15, 23, 42, 0.62)"}
+                className="cursor-pointer transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700"
+                fill={isSelected ? "rgba(180, 83, 9, 0.58)" : "rgba(248, 250, 252, 0.88)"}
+                stroke={isSelected ? "#7c2d12" : "rgba(17, 24, 39, 0.58)"}
                 strokeWidth={isSelected ? 1.8 : 0.9}
               />
             );
@@ -197,10 +197,10 @@ export function RegionalMap({
 
         {markerPoint ? (
           <g className="pointer-events-none" aria-hidden="true" transform={`translate(${markerPoint[0]} ${markerPoint[1]})`}>
-            <circle r="5" fill="#f97316" stroke="#ffffff" strokeWidth="1.5" />
-            <circle r="11" fill="none" stroke="rgba(249,115,22,0.35)" strokeWidth="2" />
+            <circle r="5" fill="#b45309" stroke="#ffffff" strokeWidth="1.5" />
+            <circle r="11" fill="none" stroke="rgba(180,83,9,0.32)" strokeWidth="2" />
             <foreignObject x="-84" y="-48" width="168" height="34" className="overflow-visible">
-              <div className="flex h-8 items-center justify-center rounded-md border border-white/80 bg-white/92 px-3 text-center text-xs font-semibold text-slate-900 shadow-sm backdrop-blur dark:border-slate-600 dark:bg-slate-900/90 dark:text-slate-100">
+              <div className="flex h-8 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-center text-xs font-semibold text-slate-900 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100">
                 <span className="max-w-[136px] overflow-hidden text-ellipsis whitespace-nowrap">
                   {selectedLabel ?? countryName}
                 </span>
@@ -215,11 +215,11 @@ export function RegionalMap({
           type="button"
           onClick={onReturnToGlobe}
           aria-label="Return to globe map"
-          className="inline-flex h-9 items-center justify-center rounded-md border border-white/75 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur hover:bg-white dark:border-slate-600 dark:bg-slate-900/86 dark:text-slate-100 dark:hover:bg-slate-800"
+          className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/86 dark:text-slate-100 dark:hover:bg-slate-900"
         >
           Globe
         </button>
-        <span className="rounded-md border border-white/75 bg-white/86 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-100">
+        <span className="rounded-md border border-slate-200 bg-white/86 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-100">
           Regional mode
         </span>
       </div>
@@ -227,7 +227,7 @@ export function RegionalMap({
       {statusLabel ? (
         <div
           role="status"
-          className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-white/75 bg-white/90 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-600 dark:bg-slate-900/86 dark:text-slate-100"
+            className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-slate-200 bg-white/90 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/86 dark:text-slate-100"
         >
           {statusLabel}
         </div>

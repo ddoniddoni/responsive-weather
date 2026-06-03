@@ -7,7 +7,7 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     humidity: 52,
     windSpeed: 3.8,
     condition: "cloudy",
-    description: "구름이 많고 바람이 약하게 붑니다.",
+    description: "Cloud cover is steady with a light coastal breeze across the region.",
   },
   USA: {
     temperature: 28,
@@ -15,7 +15,7 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     humidity: 41,
     windSpeed: 4.2,
     condition: "sunny",
-    description: "맑고 건조한 날씨입니다.",
+    description: "Clear and dry conditions are supporting strong daytime visibility.",
   },
   JPN: {
     temperature: 19,
@@ -23,7 +23,7 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     humidity: 76,
     windSpeed: 2.9,
     condition: "rainy",
-    description: "약한 비가 내리고 있습니다.",
+    description: "A light rain band is moving through with elevated humidity.",
   },
   FRA: {
     temperature: 17,
@@ -31,7 +31,7 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     humidity: 69,
     windSpeed: 5.1,
     condition: "cloudy",
-    description: "흐리고 선선한 날씨입니다.",
+    description: "Cooler air and layered clouds are keeping conditions subdued.",
   },
 };
 
@@ -79,7 +79,7 @@ const DEFAULT_WEATHER: Omit<WeatherData, "countryCode" | "countryName"> = {
   humidity: 58,
   windSpeed: 3.3,
   condition: "unknown",
-  description: "현재 지역의 상세 날씨는 준비 중입니다.",
+  description: "Detailed mock weather for this location is being prepared.",
 };
 
 export function getMockWeatherByCountry(countryCode: string, countryName: string): WeatherData {

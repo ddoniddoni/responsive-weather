@@ -79,36 +79,36 @@ export function AdminBoundaryLayer({
           const defaultStyle =
             variant === "regional"
               ? {
-                  fill: isSelected ? "rgba(250, 204, 21, 0.74)" : "rgba(236, 253, 245, 0.92)",
-                  stroke: isSelected ? "#c2410c" : "rgba(15, 23, 42, 0.62)",
+                  fill: isSelected ? "rgba(180, 83, 9, 0.58)" : "rgba(248, 250, 252, 0.88)",
+                  stroke: isSelected ? "#7c2d12" : "rgba(17, 24, 39, 0.58)",
                   strokeWidth: isSelected ? 1.6 : 0.82,
                 }
               : {
-                  fill: isSelected ? "rgba(250, 204, 21, 0.32)" : "rgba(255,255,255,0.03)",
-                  stroke: isSelected ? "#f97316" : "rgba(15, 23, 42, 0.72)",
+                  fill: isSelected ? "rgba(180, 83, 9, 0.24)" : "rgba(255,255,255,0.03)",
+                  stroke: isSelected ? "#b45309" : "rgba(17, 24, 39, 0.62)",
                   strokeWidth: isSelected ? 1.2 : 0.72,
                 };
           const hoverStyle =
             variant === "regional"
               ? {
-                  fill: "rgba(167, 243, 208, 0.9)",
+                  fill: "rgba(209, 213, 219, 0.92)",
                   stroke: "#0f172a",
                   strokeWidth: 1.15,
                 }
               : {
-                  fill: "rgba(253, 230, 138, 0.35)",
+                  fill: "rgba(217, 180, 111, 0.32)",
                   stroke: "#0f172a",
                   strokeWidth: 1.05,
                 };
           const pressedStyle =
             variant === "regional"
               ? {
-                  fill: "rgba(110, 231, 183, 0.9)",
+                  fill: "rgba(180, 83, 9, 0.5)",
                   stroke: "#0f172a",
                   strokeWidth: 1.2,
                 }
               : {
-                  fill: "rgba(251, 191, 36, 0.42)",
+                  fill: "rgba(180, 83, 9, 0.34)",
                   stroke: "#0f172a",
                   strokeWidth: 1.1,
                 };
@@ -122,7 +122,7 @@ export function AdminBoundaryLayer({
               tabIndex={0}
               onClick={(event) => handleRegionClick(event, feature)}
               onKeyDown={(event) => handleRegionKeyDown(event, feature)}
-              className="cursor-pointer outline-none transition-colors"
+              className="cursor-pointer transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700"
               style={{
                 default: defaultStyle,
                 hover: hoverStyle,

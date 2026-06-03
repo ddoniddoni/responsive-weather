@@ -3,6 +3,7 @@
 import { geoCentroid } from "d3-geo";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type {
+  KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
   WheelEvent as ReactWheelEvent,
@@ -18,7 +19,7 @@ import type { WeatherCondition } from "@/types/weather";
 import type { SelectedCountry, SelectedRegion } from "@/types/weather-data";
 
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
-const LAND_COLORS = ["#b7e4c7", "#d8f3dc", "#a8dadc", "#c7f9cc", "#bee3db"];
+const LAND_COLORS = ["#9ca3af", "#a7b0ba", "#8fa2ad", "#b0a494", "#93a69a"];
 const DEFAULT_SCALE = 220;
 const MIN_SCALE = 160;
 const MAX_SCALE = 5200;
@@ -42,10 +43,12 @@ const FOCUSED_SCALE_BY_COUNTRY_CODE: Record<string, number> = {
 };
 
 type WorldMapProps = {
+  activeLayerId?: string;
   selectedCountryCode: string | null;
   selectedCountryName: string | null;
   selectedRegionCode: string | null;
   selectedWeatherCondition: WeatherCondition | null;
+  variant?: "panel" | "immersive";
   onSelectCountry: (country: SelectedCountry) => void;
   onSelectRegion: (region: SelectedRegion) => void;
 };
@@ -120,10 +123,12 @@ function getServerMountSnapshot() {
 }
 
 export function WorldMap({
+  activeLayerId = "temperature",
   selectedCountryCode,
   selectedCountryName,
   selectedRegionCode,
   selectedWeatherCondition,
+  variant = "panel",
   onSelectCountry,
   onSelectRegion,
 }: WorldMapProps) {
@@ -146,6 +151,7 @@ export function WorldMap({
   const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
   const isRegionalMode = mapMode === "regional" && Boolean(selectedCountryCode && selectedCountryName);
   const canShowDetailButton = mapMode === "globe" && adminBoundaryStatus === "success";
+  const isImmersive = variant === "immersive";
 
   useEffect(() => {
     return () => {
@@ -279,6 +285,29 @@ export function WorldMap({
     onSelectRegion(region);
   }
 
+  function handleSelectCountryFromMap(countryName: string, countryCode: string, centroid: [number, number]) {
+    setMapMode("globe");
+    setSelectedCountryLabel(countryName);
+    setSelectedMarkerCoordinates(centroid);
+    setSelectedCountryCoordinates(centroid);
+    focusCountry(centroid, countryCode);
+    onSelectCountry({ code: countryCode, name: countryName });
+  }
+
+  function handleCountryKeyDown(
+    event: ReactKeyboardEvent<SVGPathElement>,
+    countryName: string,
+    countryCode: string,
+    centroid: [number, number],
+  ) {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    handleSelectCountryFromMap(countryName, countryCode, centroid);
+  }
+
   function handleOpenRegionalDetail(event: ReactMouseEvent<HTMLElement>) {
     event.stopPropagation();
 
@@ -305,18 +334,29 @@ export function WorldMap({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-cyan-100 bg-white shadow-[0_20px_60px_rgba(12,74,110,0.12)] dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex h-12 items-center justify-between border-b border-cyan-100 bg-gradient-to-r from-cyan-50 via-white to-emerald-50 px-4 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-cyan-950">
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">
-          {hoveredCountryName ?? selectedCountryLabel ?? "지도에서 국가를 선택하세요"}
+    <div
+      className={
+        isImmersive
+          ? "h-full min-w-0 max-w-full overflow-hidden bg-slate-100 dark:bg-slate-950"
+          : "min-w-0 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950"
+      }
+      data-weather-layer={activeLayerId}
+    >
+      {!isImmersive ? (
+      <div className="flex h-12 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950">
+        <p className="min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+          {hoveredCountryName ?? selectedCountryLabel ?? "Select a country on the globe"}
         </p>
-        <span className="hidden text-xs font-medium text-cyan-700 dark:text-cyan-200 sm:inline">
+        <span className="hidden rounded-md border border-slate-200 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:border-slate-800 dark:text-slate-400 sm:inline">
           {isRegionalMode ? "Regional Detail" : "Interactive Globe"}
         </span>
       </div>
+      ) : null}
 
       <div
-        className={`weather-map-stage relative h-[56vh] min-h-[320px] max-h-[620px] w-full overflow-hidden ${
+        className={`weather-map-stage relative w-full min-w-0 overflow-hidden ${
+          isImmersive ? "h-full min-h-[720px] max-h-none" : "h-[56vh] min-h-[320px] max-h-[620px]"
+        } ${
           isRegionalMode ? "cursor-default" : isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
         onPointerDown={handlePointerDown}
@@ -344,30 +384,30 @@ export function WorldMap({
           <ComposableMap
             projection="geoOrthographic"
             projectionConfig={{ scale, rotate: rotation }}
-            className="relative z-10 h-full w-full drop-shadow-[0_24px_32px_rgba(8,47,73,0.32)]"
+            className="relative z-10 h-full w-full min-w-0 max-w-full drop-shadow-[0_22px_28px_rgba(15,23,42,0.24)]"
             aria-label="World map"
           >
             <defs>
               <radialGradient id="globeOceanGradient" cx="38%" cy="30%" r="68%">
-                <stop offset="0%" stopColor="#dff9ff" />
-                <stop offset="42%" stopColor="#6bd3f3" />
-                <stop offset="78%" stopColor="#1679a7" />
-                <stop offset="100%" stopColor="#075985" />
+                <stop offset="0%" stopColor="#e6eef4" />
+                <stop offset="42%" stopColor="#8eb6c8" />
+                <stop offset="78%" stopColor="#28677d" />
+                <stop offset="100%" stopColor="#0f3d52" />
               </radialGradient>
               <radialGradient id="globeShadeGradient" cx="34%" cy="26%" r="74%">
-                <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
+                <stop offset="0%" stopColor="rgba(255,255,255,0.46)" />
                 <stop offset="58%" stopColor="rgba(255,255,255,0)" />
-                <stop offset="100%" stopColor="rgba(15,23,42,0.34)" />
+                <stop offset="100%" stopColor="rgba(15,23,42,0.42)" />
               </radialGradient>
             </defs>
 
             <Sphere
               id="globe-ocean"
               fill="url(#globeOceanGradient)"
-              stroke="rgba(224,242,254,0.9)"
+              stroke="rgba(226,232,240,0.84)"
               strokeWidth={0.8}
             />
-            <Graticule stroke="rgba(240,249,255,0.32)" strokeWidth={0.35} />
+            <Graticule stroke="rgba(248,250,252,0.28)" strokeWidth={0.35} />
 
             <Geographies geography={WORLD_GEO_URL}>
               {({ geographies }) =>
@@ -383,32 +423,29 @@ export function WorldMap({
                     <Geography
                       key={feature.rsmKey}
                       geography={geography}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Select ${countryName}`}
                       onMouseEnter={() => setHoveredCountryName(countryName)}
                       onMouseLeave={() => setHoveredCountryName(null)}
-                      onClick={() => {
-                        setMapMode("globe");
-                        setSelectedCountryLabel(countryName);
-                        setSelectedMarkerCoordinates(centroid);
-                        setSelectedCountryCoordinates(centroid);
-                        focusCountry(centroid, countryCode);
-                        onSelectCountry({ code: countryCode, name: countryName });
-                      }}
-                      className={`outline-none transition-colors ${
+                      onClick={() => handleSelectCountryFromMap(countryName, countryCode, centroid)}
+                      onKeyDown={(event) => handleCountryKeyDown(event, countryName, countryCode, centroid)}
+                      className={`transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
                         isSelected ? "pointer-events-none" : "cursor-pointer"
                       }`}
                       style={{
                         default: {
-                          fill: isSelected ? "rgba(183, 228, 199, 0.18)" : defaultFill,
-                          stroke: isSelected ? "#111827" : "rgba(14, 116, 144, 0.62)",
+                          fill: isSelected ? "rgba(245, 158, 11, 0.18)" : defaultFill,
+                          stroke: isSelected ? "#111827" : "rgba(17, 24, 39, 0.56)",
                           strokeWidth: isSelected ? 1.8 : 0.75,
                         },
                         hover: {
-                          fill: "#fde68a",
+                          fill: "#d9b46f",
                           stroke: "#0f172a",
                           strokeWidth: 1.1,
                         },
                         pressed: {
-                          fill: "#f59e0b",
+                          fill: "#b45309",
                           stroke: "#0f172a",
                           strokeWidth: 1.2,
                         },
@@ -428,10 +465,7 @@ export function WorldMap({
             />
 
             {selectedMarkerCoordinates && selectedWeatherCondition ? (
-              <WeatherConditionMarker
-                condition={selectedWeatherCondition}
-                coordinates={selectedMarkerCoordinates}
-              />
+              <WeatherConditionMarker condition={selectedWeatherCondition} coordinates={selectedMarkerCoordinates} />
             ) : null}
 
             {selectedCountryCode && selectedMarkerCoordinates ? (
@@ -473,54 +507,52 @@ export function WorldMap({
             ) : null}
           </ComposableMap>
         ) : (
-          <div
-            aria-hidden="true"
-            className="relative z-10 h-full w-full"
-          >
-            <div className="absolute left-1/2 top-1/2 h-[min(72vw,480px)] w-[min(72vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-100 bg-[radial-gradient(circle_at_38%_30%,#dff9ff_0%,#6bd3f3_42%,#1679a7_78%,#075985_100%)] shadow-[0_24px_32px_rgba(8,47,73,0.32)] dark:border-slate-600" />
+          <div aria-hidden="true" className="relative z-10 h-full w-full">
+            <div className="absolute left-1/2 top-1/2 h-[min(72vw,480px)] w-[min(72vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200 bg-[radial-gradient(circle_at_38%_30%,#e6eef4_0%,#8eb6c8_42%,#28677d_78%,#0f3d52_100%)] shadow-[0_22px_28px_rgba(15,23,42,0.24)] dark:border-slate-700" />
           </div>
         )}
 
         {!isRegionalMode ? (
-        <div className="absolute right-2 top-2 z-20 flex gap-2">
-          <button
-            type="button"
-            onClick={handleZoomIn}
-            aria-label="지도 확대"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/70 bg-white/90 text-slate-900 shadow-sm backdrop-blur hover:bg-white dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-800"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            onClick={handleZoomOut}
-            aria-label="지도 축소"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/70 bg-white/90 text-slate-900 shadow-sm backdrop-blur hover:bg-white dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-800"
-          >
-            -
-          </button>
-          <button
-            type="button"
-            onClick={handleResetView}
-            aria-label="지도 초기 위치로 이동"
-            className="inline-flex h-8 items-center justify-center rounded-md border border-white/70 bg-white/90 px-2 text-xs text-slate-900 shadow-sm backdrop-blur hover:bg-white dark:border-slate-600 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-800"
-          >
-            Reset
-          </button>
-        </div>
+          <div className={`absolute right-3 z-20 flex gap-2 ${isImmersive ? "top-48 md:top-24" : "top-3"}`}>
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              aria-label="Zoom in"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 font-mono text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              aria-label="Zoom out"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 font-mono text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              onClick={handleResetView}
+              aria-label="Reset map view"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
+            >
+              Reset
+            </button>
+          </div>
         ) : null}
 
         {!isRegionalMode && adminBoundaryStatusLabel ? (
           <div
             role="status"
-            className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-white/75 bg-white/90 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-600 dark:bg-slate-900/86 dark:text-slate-100"
+            className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/86 dark:text-slate-100"
           >
             {adminBoundaryStatusLabel}
           </div>
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-1 px-4 py-3 text-xs text-slate-600 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+      {!isImmersive ? (
+      <div className="flex flex-col gap-1 border-t border-slate-200 px-4 py-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
         <p>
           {isRegionalMode
             ? "Select a region for local weather, or return to the globe."
@@ -540,6 +572,7 @@ export function WorldMap({
           </p>
         ) : null}
       </div>
+      ) : null}
     </div>
   );
 }

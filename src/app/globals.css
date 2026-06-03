@@ -1,37 +1,50 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f6f8;
+  --foreground: #111827;
 }
 
 html.light {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f6f8;
+  --foreground: #111827;
+  color-scheme: light;
 }
 
 html.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #070a12;
+  --foreground: #e5e7eb;
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-noto-sans-kr);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-noto-sans-kr), Arial, Helvetica, sans-serif;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .weather-button .weather-sun {
   border-radius: 9999px;
-  background: radial-gradient(circle, #fef08a 35%, #f59e0b 75%, #d97706 100%);
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+  background: radial-gradient(circle, #fde68a 34%, #d97706 82%, #92400e 100%);
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.36);
 }
 
 .weather-button .weather-sun::before {
@@ -39,8 +52,8 @@ body {
   position: absolute;
   inset: -4px;
   border-radius: 9999px;
-  border: 1px solid rgba(245, 158, 11, 0.7);
-  opacity: 0.8;
+  border: 1px solid rgba(146, 64, 14, 0.24);
+  opacity: 0.58;
 }
 
 .weather-button .weather-rain {
@@ -53,8 +66,8 @@ body {
   width: 2px;
   height: 10px;
   border-radius: 9999px;
-  background: rgba(125, 211, 252, 0.8);
-  animation: weather-rain-fall 900ms linear infinite;
+  background: rgba(14, 116, 144, 0.48);
+  animation: weather-rain-fall 1.2s linear infinite;
 }
 
 .weather-button .weather-rain-drop-1 {
@@ -79,8 +92,8 @@ body {
 
 .weather-button .weather-cloud {
   pointer-events: none;
-  opacity: 0.95;
-  animation: weather-cloud-drift 3s ease-in-out infinite;
+  opacity: 0.68;
+  animation: weather-cloud-drift 4s ease-in-out infinite;
 }
 
 .weather-button .weather-cloud-shape {
@@ -91,9 +104,9 @@ body {
   height: 14px;
   border-radius: 9999px;
   transform: translateY(-50%);
-  background: linear-gradient(180deg, #e2e8f0, #cbd5e1);
-  border: 1px solid rgba(148, 163, 184, 0.8);
-  box-shadow: 0 1px 4px rgba(30, 41, 59, 0.28);
+  background: linear-gradient(180deg, #f8fafc, #cbd5e1);
+  border: 1px solid rgba(100, 116, 139, 0.5);
+  box-shadow: 0 1px 3px rgba(30, 41, 59, 0.16);
 }
 
 .weather-button .weather-cloud-shape::before,
@@ -200,24 +213,74 @@ body {
 
 .weather-map-stage {
   background:
-    radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.92) 0 17%, rgba(236, 253, 245, 0.26) 32%, transparent 58%),
-    linear-gradient(140deg, #e0f7fa 0%, #eefdf8 42%, #dbeafe 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, #dbe7ef 0%, #eff4f7 46%, #d8e0e7 100%);
+}
+
+[data-weather-layer="temperature"] .weather-map-stage {
+  background:
+    linear-gradient(90deg, rgba(59, 130, 246, 0.22), rgba(34, 197, 94, 0.24) 36%, rgba(234, 179, 8, 0.3) 62%, rgba(239, 68, 68, 0.3)),
+    linear-gradient(135deg, #d9f1f4 0%, #f4e0ad 42%, #d9998d 100%);
+}
+
+[data-weather-layer="feels-like"] .weather-map-stage {
+  background:
+    linear-gradient(120deg, rgba(14, 165, 233, 0.24), rgba(245, 158, 11, 0.3), rgba(190, 18, 60, 0.28)),
+    linear-gradient(135deg, #d7ebf5 0%, #f1d6a2 48%, #c98787 100%);
+}
+
+[data-weather-layer="precipitation"] .weather-map-stage,
+[data-weather-layer="radar"] .weather-map-stage {
+  background:
+    linear-gradient(105deg, rgba(14, 116, 144, 0.26), rgba(59, 130, 246, 0.2) 36%, rgba(168, 85, 247, 0.24) 70%, rgba(236, 72, 153, 0.22)),
+    linear-gradient(135deg, #dbeafe 0%, #bcd7ef 48%, #d5c7ea 100%);
+}
+
+[data-weather-layer="wind"] .weather-map-stage {
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.28) 0 2px, transparent 2px 24px),
+    linear-gradient(105deg, rgba(20, 184, 166, 0.22), rgba(59, 130, 246, 0.24), rgba(15, 23, 42, 0.2)),
+    linear-gradient(135deg, #d8f3f1 0%, #cddff1 54%, #c9d0d8 100%);
+}
+
+[data-weather-layer="clouds"] .weather-map-stage,
+[data-weather-layer="humidity"] .weather-map-stage {
+  background:
+    linear-gradient(120deg, rgba(148, 163, 184, 0.3), rgba(226, 232, 240, 0.42), rgba(14, 165, 233, 0.18)),
+    linear-gradient(135deg, #e2e8f0 0%, #f8fafc 48%, #cbd5e1 100%);
+}
+
+[data-weather-layer="pressure"] .weather-map-stage {
+  background:
+    radial-gradient(circle at 32% 44%, rgba(59, 130, 246, 0.25), transparent 26%),
+    radial-gradient(circle at 72% 46%, rgba(239, 68, 68, 0.24), transparent 28%),
+    linear-gradient(135deg, #dbeafe 0%, #f8fafc 50%, #fee2e2 100%);
 }
 
 html.dark .weather-map-stage {
   background:
-    radial-gradient(circle at 50% 44%, rgba(186, 230, 253, 0.22) 0 17%, rgba(20, 184, 166, 0.12) 32%, transparent 58%),
-    linear-gradient(140deg, #082f49 0%, #0f172a 50%, #052e2b 100%);
+    linear-gradient(180deg, rgba(15, 23, 42, 0.74), rgba(15, 23, 42, 0)),
+    linear-gradient(135deg, #0f172a 0%, #111827 48%, #07111f 100%);
+}
+
+html.dark [data-weather-layer="temperature"] .weather-map-stage {
+  background:
+    linear-gradient(90deg, rgba(37, 99, 235, 0.34), rgba(22, 163, 74, 0.32) 36%, rgba(202, 138, 4, 0.36) 62%, rgba(185, 28, 28, 0.34)),
+    linear-gradient(135deg, #0f172a 0%, #3f2f18 48%, #4a1f24 100%);
+}
+
+html.dark [data-weather-layer="wind"] .weather-map-stage {
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.16) 0 2px, transparent 2px 24px),
+    linear-gradient(105deg, rgba(20, 184, 166, 0.2), rgba(37, 99, 235, 0.26), rgba(15, 23, 42, 0.34)),
+    linear-gradient(135deg, #052e2b 0%, #0f172a 54%, #020617 100%);
 }
 
 .weather-map-aurora {
   position: absolute;
   inset: -18% -10%;
-  background:
-    radial-gradient(circle at 22% 18%, rgba(45, 212, 191, 0.24), transparent 28%),
-    radial-gradient(circle at 80% 72%, rgba(125, 211, 252, 0.24), transparent 30%);
-  filter: blur(18px);
-  opacity: 0.9;
+  background: linear-gradient(120deg, rgba(14, 116, 144, 0.08), transparent 38%, rgba(180, 83, 9, 0.08));
+  opacity: 0.72;
 }
 
 .weather-map-grid {
@@ -227,7 +290,7 @@ html.dark .weather-map-stage {
     linear-gradient(rgba(14, 116, 144, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(14, 116, 144, 0.08) 1px, transparent 1px);
   background-size: 44px 44px;
-  mask-image: radial-gradient(circle at center, black 0 52%, transparent 74%);
+  mask-image: linear-gradient(180deg, transparent, black 16%, black 84%, transparent);
 }
 
 .weather-country-popout-anchor {
@@ -238,24 +301,23 @@ html.dark .weather-map-stage {
 
 .weather-country-popout {
   display: flex;
-  width: 232px;
-  min-height: 54px;
+  width: 224px;
+  min-height: 48px;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.92);
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(224, 242, 254, 0.92));
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
   box-shadow:
-    0 14px 24px rgba(8, 47, 73, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    0 14px 26px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
   color: #0f172a;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   line-height: 1;
-  padding: 8px 10px;
+  padding: 8px;
   pointer-events: auto;
-  transform: perspective(80px) rotateX(8deg);
 }
 
 .weather-country-popout span {
@@ -271,22 +333,30 @@ html.dark .weather-map-stage {
   min-width: 64px;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(14, 116, 144, 0.24);
-  border-radius: 8px;
-  background: #0f172a;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  border-radius: 6px;
+  background: #111827;
   color: #f8fafc;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
 }
 
 .weather-country-detail-button:hover {
-  background: #164e63;
+  background: #374151;
+}
+
+.weather-country-detail-button:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
 }
 
 .weather-country-popout-line {
-  stroke: rgba(15, 23, 42, 0.92);
+  stroke: rgba(17, 24, 39, 0.72);
   stroke-linecap: round;
   stroke-width: 1.8;
 }
@@ -299,11 +369,11 @@ html.dark .weather-map-stage {
 }
 
 html.dark .weather-country-popout {
-  border-color: rgba(103, 232, 249, 0.45);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(8, 47, 73, 0.92));
+  border-color: rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.94);
   color: #f8fafc;
   box-shadow:
-    0 12px 20px rgba(0, 0, 0, 0.35),
+    0 12px 24px rgba(0, 0, 0, 0.36),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
@@ -317,25 +387,25 @@ html.dark .weather-country-popout-dot {
 }
 
 .weather-globe-marker .weather-globe-shadow {
-  fill: rgba(8, 47, 73, 0.18);
+  fill: rgba(15, 23, 42, 0.18);
 }
 
 .weather-globe-marker .weather-globe-sun circle {
-  fill: #fbbf24;
-  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.7));
+  fill: #d97706;
+  filter: drop-shadow(0 0 5px rgba(217, 119, 6, 0.38));
   animation: globe-sun-pulse 1.8s ease-in-out infinite;
 }
 
 .weather-globe-marker .weather-globe-cloud {
-  fill: #e2e8f0;
-  stroke: #94a3b8;
+  fill: #e5e7eb;
+  stroke: #6b7280;
   stroke-width: 0.8;
   filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.35));
   animation: globe-cloud-float 2.2s ease-in-out infinite;
 }
 
 .weather-globe-marker .weather-globe-rain line {
-  stroke: #38bdf8;
+  stroke: #0e7490;
   stroke-width: 1.5;
   stroke-linecap: round;
   animation: globe-rain-fall 0.9s linear infinite;
@@ -390,10 +460,21 @@ html.dark .weather-country-popout-dot {
   }
   70% {
     opacity: 1;
-    transform: translateY(-2px) scale(1.08);
+    transform: translateY(-1px) scale(1.02);
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weather-button .weather-rain-drop,
+  .weather-button .weather-cloud,
+  .weather-country-popout-anchor,
+  .weather-globe-marker .weather-globe-sun circle,
+  .weather-globe-marker .weather-globe-cloud,
+  .weather-globe-marker .weather-globe-rain line {
+    animation: none;
   }
 }

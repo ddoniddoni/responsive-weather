@@ -18,20 +18,20 @@ export function WeatherConditionMarker({ condition, coordinates }: WeatherCondit
         <ellipse cx="0" cy="14" rx="18" ry="6" className="weather-globe-shadow" />
         {condition === "sunny" ? (
           <g className="weather-globe-sun">
-            <circle cx="0" cy="0" r="10" />
+            <circle cx="0" cy="0" r="8" />
           </g>
         ) : null}
         {condition === "cloudy" ? (
           <g className="weather-globe-cloud">
-            <ellipse cx="0" cy="2" rx="14" ry="8" />
-            <circle cx="-6" cy="-3" r="6" />
-            <circle cx="3" cy="-5" r="8" />
+            <ellipse cx="0" cy="2" rx="12" ry="7" />
+            <circle cx="-5" cy="-3" r="5" />
+            <circle cx="3" cy="-5" r="7" />
           </g>
         ) : null}
         {condition === "rainy" ? (
           <g className="weather-globe-rain">
             <g className="weather-globe-cloud">
-              <ellipse cx="0" cy="-1" rx="13" ry="7" />
+              <ellipse cx="0" cy="-1" rx="12" ry="7" />
               <circle cx="-6" cy="-5" r="5" />
               <circle cx="2" cy="-7" r="7" />
             </g>
