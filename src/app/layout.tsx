@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const notoSansKr = Noto_Sans_KR({
+  variable: "--font-noto-sans-kr",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -16,7 +17,7 @@ const jetBrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Responsive Weather",
-  description: "Interactive weather dashboard for global and regional condition previews.",
+  description: "Interactive weather map for global and regional condition previews.",
 };
 
 export default function RootLayout({
@@ -26,8 +27,8 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${inter.variable} ${jetBrainsMono.variable} light h-full bg-background antialiased`}
+      lang="ko"
+      className={`${notoSansKr.variable} ${jetBrainsMono.variable} light h-full bg-background antialiased`}
       suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">{children}</body>

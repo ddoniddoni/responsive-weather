@@ -11,8 +11,8 @@ type WeatherDetailPanelProps = {
 export function WeatherDetailPanel({ weather, theme, variant = "panel" }: WeatherDetailPanelProps) {
   const isOverlay = variant === "overlay";
   const panelClassName = isOverlay
-    ? "rounded-2xl border border-white/70 bg-white/94 p-4 shadow-2xl shadow-slate-950/20 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/88"
-    : "rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950";
+    ? "rounded-md border border-white/70 bg-white/94 p-4 shadow-2xl shadow-slate-950/20 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/88"
+    : "rounded-md border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950";
 
   if (!weather) {
     return (
@@ -20,9 +20,9 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel" }: Weathe
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
           Forecast Detail
         </p>
-        <h2 className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-100">Select a location</h2>
-        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-          Choose a country on the map to review temperature, wind, humidity, and condition-specific interface states.
+        <h2 className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-100">지역 선택</h2>
+        <p className="mt-3 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
+          지도에서 국가를 선택하면 기온, 바람, 습도, 날씨 상태를 이 패널에서 확인할 수 있습니다.
         </p>
       </aside>
     );
@@ -30,30 +30,31 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel" }: Weathe
 
   const title = weather.regionName ?? weather.countryName;
   const subtitle = weather.regionName ? `${weather.countryName} / ${weather.regionCode}` : weather.countryCode;
-  const updatedAt = new Intl.DateTimeFormat("en", {
+  const updatedAt = new Intl.DateTimeFormat("ko", {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date());
+  const temperatureText = `${weather.temperature}\u00b0C`;
   const metricCards = [
     {
-      label: "Temperature",
-      value: `${weather.temperature}°C`,
-      helperText: "Current air temperature",
+      label: "기온",
+      value: temperatureText,
+      helperText: "현재 대기 온도",
     },
     {
-      label: "Feels Like",
-      value: `${weather.feelsLike}°C`,
-      helperText: "Perceived outdoor comfort",
+      label: "체감",
+      value: `${weather.feelsLike}\u00b0C`,
+      helperText: "야외 체감 온도",
     },
     {
-      label: "Humidity",
+      label: "습도",
       value: `${weather.humidity}%`,
-      helperText: "Moisture level in the air",
+      helperText: "공기 중 수분 비율",
     },
     {
-      label: "Wind",
+      label: "바람",
       value: `${weather.windSpeed} m/s`,
-      helperText: "Surface wind speed",
+      helperText: "지표면 기준 풍속",
     },
   ];
 
@@ -78,17 +79,23 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel" }: Weathe
               Current
             </p>
             <p className="mt-2 font-mono text-5xl font-semibold leading-none tracking-normal text-slate-950 dark:text-white">
-              {weather.temperature}°C
+              {temperatureText}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Updated</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">업데이트</p>
             <p className="mt-1 font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">{updatedAt}</p>
           </div>
         </div>
-        <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">{weather.description}</p>
+        <p className="mt-4 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
+          {weather.description}
+        </p>
       </div>
-      <dl className={`mt-4 grid grid-cols-1 gap-3 text-sm ${isOverlay ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"}`}>
+      <dl
+        className={`mt-4 grid grid-cols-1 gap-3 text-sm ${
+          isOverlay ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
+        }`}
+      >
         {metricCards.map((metricCard) => (
           <WeatherMetricCard
             key={metricCard.label}
