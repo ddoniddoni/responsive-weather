@@ -8,6 +8,7 @@ import { WeatherLayerRail } from "@/components/dashboard/weather-layer-rail";
 import { WeatherScaleLegend } from "@/components/dashboard/weather-scale-legend";
 import { WorldMap } from "@/components/map/world-map";
 import { WeatherDetailPanel } from "@/components/weather/weather-detail-panel";
+import { SEARCHABLE_LOCATIONS, type SearchableLocation } from "@/constants/searchable-locations";
 import { FORECAST_TIMES, WEATHER_LAYERS } from "@/constants/weather-layers";
 import { getMockWeatherByCountry, getMockWeatherByRegion } from "@/lib/weather/mock-weather";
 import type { SelectedCountry, SelectedRegion } from "@/types/weather-data";
@@ -18,6 +19,7 @@ export function WeatherDashboard() {
   const [selectedRegion, setSelectedRegion] = useState<SelectedRegion | null>(null);
   const [activeLayer, setActiveLayer] = useState(WEATHER_LAYERS[0]);
   const [activeTime, setActiveTime] = useState(0);
+  const [searchValue, setSearchValue] = useState("");
   const isDark = theme === "dark";
 
   useEffect(() => {
@@ -37,11 +39,20 @@ export function WeatherDashboard() {
     return getMockWeatherByCountry(selectedCountry.code, selectedCountry.name);
   }, [selectedCountry, selectedRegion]);
 
-  const selectedLabel = weather?.regionName ?? weather?.countryName ?? "지도에서 지역을 선택하세요";
+  const selectedLabel = weather?.regionName ?? weather?.countryName ?? "국가를 검색하거나 지도에서 선택하세요";
 
   function handleSelectCountry(country: SelectedCountry) {
     setSelectedCountry(country);
     setSelectedRegion(null);
+    setSearchValue(country.name);
+  }
+
+  function handleSelectSearchLocation(location: SearchableLocation) {
+    handleSelectCountry({
+      code: location.code,
+      name: location.name,
+      coordinates: location.coordinates,
+    });
   }
 
   return (
@@ -54,6 +65,7 @@ export function WeatherDashboard() {
         activeLayerId={activeLayer.id}
         selectedCountryCode={selectedCountry?.code ?? null}
         selectedCountryName={selectedCountry?.name ?? null}
+        selectedCountryCoordinates={selectedCountry?.coordinates ?? null}
         selectedRegionCode={selectedRegion?.regionCode ?? null}
         selectedWeatherCondition={weather?.condition ?? null}
         variant="immersive"
@@ -65,7 +77,11 @@ export function WeatherDashboard() {
         activeLayer={activeLayer}
         activeTimeLabel={FORECAST_TIMES[activeTime]}
         isDark={isDark}
+        searchLocations={SEARCHABLE_LOCATIONS}
+        searchValue={searchValue}
         selectedLabel={selectedLabel}
+        onSearchValueChange={setSearchValue}
+        onSelectSearchLocation={handleSelectSearchLocation}
         onToggleTheme={() => setTheme(isDark ? "light" : "dark")}
       />
       <WeatherLayerRail activeLayer={activeLayer} layers={WEATHER_LAYERS} onSelectLayer={setActiveLayer} />

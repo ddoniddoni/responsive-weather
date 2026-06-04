@@ -16,6 +16,7 @@ export type WeatherData = {
 export type SelectedCountry = {
   code: string;
   name: string;
+  coordinates?: [number, number];
 };
 
 export type SelectedRegion = {
