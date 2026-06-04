@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ForecastTimeline } from "@/components/dashboard/forecast-timeline";
 import { MapTopBar } from "@/components/dashboard/map-top-bar";
+import { MobileWeatherSheet } from "@/components/dashboard/mobile-weather-sheet";
 import { WeatherLayerRail } from "@/components/dashboard/weather-layer-rail";
 import { WeatherScaleLegend } from "@/components/dashboard/weather-scale-legend";
 import { WorldMap } from "@/components/map/world-map";
@@ -20,6 +21,7 @@ export function WeatherDashboard() {
   const [activeLayer, setActiveLayer] = useState(WEATHER_LAYERS[0]);
   const [activeTime, setActiveTime] = useState(0);
   const [searchValue, setSearchValue] = useState("");
+  const [isMobileWeatherOpen, setIsMobileWeatherOpen] = useState(false);
   const isDark = theme === "dark";
 
   useEffect(() => {
@@ -45,6 +47,12 @@ export function WeatherDashboard() {
     setSelectedCountry(country);
     setSelectedRegion(null);
     setSearchValue(country.name);
+    setIsMobileWeatherOpen(true);
+  }
+
+  function handleSelectRegion(region: SelectedRegion) {
+    setSelectedRegion(region);
+    setIsMobileWeatherOpen(true);
   }
 
   function handleSelectSearchLocation(location: SearchableLocation) {
@@ -70,7 +78,7 @@ export function WeatherDashboard() {
         selectedWeatherCondition={weather?.condition ?? null}
         variant="immersive"
         onSelectCountry={handleSelectCountry}
-        onSelectRegion={setSelectedRegion}
+        onSelectRegion={handleSelectRegion}
       />
 
       <MapTopBar
@@ -88,7 +96,14 @@ export function WeatherDashboard() {
       <WeatherScaleLegend activeLayer={activeLayer} />
       <ForecastTimeline activeTime={activeTime} times={FORECAST_TIMES} onSelectTime={setActiveTime} />
 
-      <div className="absolute bottom-24 left-3 z-20 w-[calc(100vw-1.5rem)] min-w-0 md:bottom-24 md:left-auto md:right-4 md:w-[390px]">
+      <MobileWeatherSheet
+        weather={weather}
+        theme={theme}
+        isOpen={isMobileWeatherOpen}
+        onToggleOpen={() => setIsMobileWeatherOpen((isOpen) => !isOpen)}
+      />
+
+      <div className="absolute bottom-24 left-3 z-20 hidden w-[calc(100vw-1.5rem)] min-w-0 md:bottom-24 md:left-auto md:right-4 md:block md:w-[390px]">
         <WeatherDetailPanel weather={weather} theme={theme} variant="overlay" />
       </div>
     </div>
