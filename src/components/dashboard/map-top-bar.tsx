@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import type { SearchableLocation } from "@/constants/searchable-locations";
 import type { WeatherLayer } from "@/types/weather-layer";
+
+const NO_HIGHLIGHTED_RESULT = -1;
 
 type MapTopBarProps = {
   activeLayer: WeatherLayer;
@@ -30,6 +33,7 @@ export function MapTopBar({
 }: MapTopBarProps) {
   const themeLabel = isDark ? "라이트" : "다크";
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [highlightedResultIndex, setHighlightedResultIndex] = useState(0);
   const filteredLocations = useMemo(() => {
     const normalizedQuery = searchValue.trim().toLowerCase();
 
@@ -43,10 +47,65 @@ export function MapTopBar({
       return searchableText.includes(normalizedQuery);
     });
   }, [searchLocations, searchValue]);
+  const safeHighlightedResultIndex =
+    filteredLocations.length > 0
+      ? Math.min(highlightedResultIndex, filteredLocations.length - 1)
+      : NO_HIGHLIGHTED_RESULT;
+  const selectedLocation = searchLocations.find((location) => location.name === selectedLabel);
+  const searchStatusLabel =
+    filteredLocations.length > 0
+      ? `${filteredLocations.length}개 지원 지역`
+      : "지원 지역 없음";
 
   function handleSelectLocation(location: SearchableLocation) {
     onSelectSearchLocation(location);
     setIsSearchOpen(false);
+    setHighlightedResultIndex(0);
+  }
+
+  function handleSearchChange(value: string) {
+    onSearchValueChange(value);
+    setIsSearchOpen(true);
+    setHighlightedResultIndex(0);
+  }
+
+  function handleClearSearch() {
+    onSearchValueChange("");
+    setIsSearchOpen(true);
+    setHighlightedResultIndex(0);
+  }
+
+  function handleSearchKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setIsSearchOpen(true);
+      setHighlightedResultIndex((currentIndex) => {
+        if (filteredLocations.length === 0) {
+          return NO_HIGHLIGHTED_RESULT;
+        }
+
+        return Math.min(currentIndex + 1, filteredLocations.length - 1);
+      });
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setIsSearchOpen(true);
+      setHighlightedResultIndex((currentIndex) => Math.max(currentIndex - 1, 0));
+      return;
+    }
+
+    if (event.key === "Enter" && isSearchOpen && safeHighlightedResultIndex >= 0) {
+      event.preventDefault();
+      handleSelectLocation(filteredLocations[safeHighlightedResultIndex]);
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setIsSearchOpen(false);
+    }
   }
 
   return (
@@ -80,39 +139,85 @@ export function MapTopBar({
               placeholder={selectedLabel}
               aria-label="국가 검색"
               onChange={(event) => {
-                onSearchValueChange(event.target.value);
-                setIsSearchOpen(true);
+                handleSearchChange(event.target.value);
               }}
               onFocus={() => setIsSearchOpen(true)}
               onBlur={() => {
                 window.setTimeout(() => setIsSearchOpen(false), 120);
               }}
+              onKeyDown={handleSearchKeyDown}
               className="min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"
             />
+            {searchValue ? (
+              <button
+                type="button"
+                aria-label="검색어 지우기"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={handleClearSearch}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+              >
+                x
+              </button>
+            ) : null}
             <span className="ml-auto rounded bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white dark:bg-white dark:text-slate-950">
               위치
             </span>
           </label>
           {isSearchOpen ? (
             <div className="absolute left-0 right-0 top-[calc(100%+0.375rem)] max-h-64 overflow-y-auto rounded-md border border-white/75 bg-white/96 p-1.5 text-sm shadow-xl shadow-slate-950/18 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/94">
+              <div className="flex items-center justify-between gap-3 px-2.5 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <span className="min-w-0 truncate">
+                  {selectedLocation ? `현재 선택: ${selectedLocation.name}` : "지원 지역"}
+                </span>
+                <span className="shrink-0 rounded bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  {searchStatusLabel}
+                </span>
+              </div>
               {filteredLocations.length > 0 ? (
-                filteredLocations.map((location) => (
-                  <button
-                    key={location.code}
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => handleSelectLocation(location)}
-                    className="flex h-11 w-full items-center justify-between gap-3 rounded px-3 text-left text-slate-900 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-100 dark:hover:bg-slate-800"
-                  >
-                    <span className="min-w-0 truncate font-semibold">{location.name}</span>
-                    <span className="shrink-0 font-mono text-xs font-bold text-slate-500 dark:text-slate-400">
-                      {location.code}
-                    </span>
-                  </button>
-                ))
+                <div className="flex flex-col gap-1">
+                  {filteredLocations.map((location, index) => {
+                    const isHighlighted = safeHighlightedResultIndex === index;
+
+                    return (
+                      <button
+                        key={location.code}
+                        type="button"
+                        aria-current={selectedLocation?.code === location.code ? "true" : undefined}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setHighlightedResultIndex(index)}
+                        onClick={() => handleSelectLocation(location)}
+                        className={`flex min-h-12 w-full items-center justify-between gap-3 rounded px-3 py-2 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 ${
+                          isHighlighted
+                            ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
+                            : "text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold">{location.name}</span>
+                          <span
+                            className={`block truncate text-xs ${
+                              isHighlighted ? "text-white/72 dark:text-slate-600" : "text-slate-500 dark:text-slate-400"
+                            }`}
+                          >
+                            {location.aliases.slice(0, 3).join(" / ")}
+                          </span>
+                        </span>
+                        <span
+                          className={`shrink-0 rounded px-2 py-1 font-mono text-xs font-bold ${
+                            isHighlighted
+                              ? "bg-white/16 text-white dark:bg-slate-950/10 dark:text-slate-700"
+                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                          }`}
+                        >
+                          {location.code}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               ) : (
-                <div role="status" className="px-3 py-3 text-sm font-medium text-slate-500 dark:text-slate-400">
-                  지원하는 mock 지역이 없습니다
+                <div role="status" className="px-3 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                  현재 MVP 검색은 South Korea, United States, Japan, France를 지원합니다.
                 </div>
               )}
             </div>
