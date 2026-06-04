@@ -1,7 +1,7 @@
 "use client";
 
 import { geoCentroid } from "d3-geo";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
@@ -46,6 +46,7 @@ type WorldMapProps = {
   activeLayerId?: string;
   selectedCountryCode: string | null;
   selectedCountryName: string | null;
+  selectedCountryCoordinates: [number, number] | null;
   selectedRegionCode: string | null;
   selectedWeatherCondition: WeatherCondition | null;
   variant?: "panel" | "immersive";
@@ -126,6 +127,7 @@ export function WorldMap({
   activeLayerId = "temperature",
   selectedCountryCode,
   selectedCountryName,
+  selectedCountryCoordinates: selectedCountryCoordinatesFromProps,
   selectedRegionCode,
   selectedWeatherCondition,
   variant = "panel",
@@ -146,6 +148,8 @@ export function WorldMap({
   const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
   const [selectedCountryCoordinates, setSelectedCountryCoordinates] = useState<[number, number] | null>(null);
   const [mapMode, setMapMode] = useState<MapMode>("globe");
+  const scaleRef = useRef(DEFAULT_SCALE);
+  const rotationRef = useRef<[number, number, number]>([0, -15, 0]);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const focusAnimationRef = useRef<number | null>(null);
   const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
@@ -153,13 +157,101 @@ export function WorldMap({
   const canShowDetailButton = mapMode === "globe" && adminBoundaryStatus === "success";
   const isImmersive = variant === "immersive";
 
-  useEffect(() => {
-    return () => {
-      if (focusAnimationRef.current !== null) {
-        window.cancelAnimationFrame(focusAnimationRef.current);
-      }
-    };
+  const cancelFocusAnimation = useCallback(() => {
+    if (focusAnimationRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(focusAnimationRef.current);
+    focusAnimationRef.current = null;
   }, []);
+
+  const applyScaleDelta = useCallback((delta: number) => {
+    setScale((currentScale) => {
+      const nextScale = clampScale(currentScale + delta);
+
+      scaleRef.current = nextScale;
+
+      return nextScale;
+    });
+  }, []);
+
+  const focusCoordinates = useCallback(
+    (coordinates: [number, number], targetScale: number) => {
+      cancelFocusAnimation();
+
+      const [longitude, latitude] = coordinates;
+      const fromRotation = rotationRef.current;
+      const targetRotation: [number, number, number] = [
+        -longitude,
+        clampLatitude(-latitude),
+        fromRotation[2],
+      ];
+      const fromScale = scaleRef.current;
+      const nextScale = Math.max(targetScale, fromScale);
+      const startedAt = window.performance.now();
+      const longitudeDelta = getShortestAngleDelta(fromRotation[0], targetRotation[0]);
+      const latitudeDelta = targetRotation[1] - fromRotation[1];
+
+      function animate(now: number) {
+        const progress = Math.min((now - startedAt) / FOCUS_ANIMATION_DURATION, 1);
+        const easedProgress = easeOutCubic(progress);
+        const nextRotation: [number, number, number] = [
+          fromRotation[0] + longitudeDelta * easedProgress,
+          fromRotation[1] + latitudeDelta * easedProgress,
+          fromRotation[2],
+        ];
+        const animatedScale = fromScale + (nextScale - fromScale) * easedProgress;
+
+        rotationRef.current = nextRotation;
+        scaleRef.current = animatedScale;
+        setRotation(nextRotation);
+        setScale(animatedScale);
+
+        if (progress < 1) {
+          focusAnimationRef.current = window.requestAnimationFrame(animate);
+          return;
+        }
+
+        focusAnimationRef.current = null;
+      }
+
+      focusAnimationRef.current = window.requestAnimationFrame(animate);
+    },
+    [cancelFocusAnimation],
+  );
+
+  const focusCountry = useCallback(
+    (centroid: [number, number], countryCode: string) => {
+      focusCoordinates(centroid, getFocusedScale(countryCode));
+    },
+    [focusCoordinates],
+  );
+
+  useEffect(() => {
+    return cancelFocusAnimation;
+  }, [cancelFocusAnimation]);
+
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
+
+  useEffect(() => {
+    rotationRef.current = rotation;
+  }, [rotation]);
+
+  useEffect(() => {
+    if (!selectedCountryCode || !selectedCountryName || !selectedCountryCoordinatesFromProps) {
+      return;
+    }
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      setMapMode("globe");
+      focusCountry(selectedCountryCoordinatesFromProps, selectedCountryCode);
+    });
+
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [focusCountry, selectedCountryCode, selectedCountryCoordinatesFromProps, selectedCountryName]);
 
   function handleZoomIn() {
     cancelFocusAnimation();
@@ -174,23 +266,10 @@ export function WorldMap({
   function handleResetView() {
     cancelFocusAnimation();
     setMapMode("globe");
+    scaleRef.current = DEFAULT_SCALE;
+    rotationRef.current = [0, -15, 0];
     setScale(DEFAULT_SCALE);
     setRotation([0, -15, 0]);
-  }
-
-  function applyScaleDelta(delta: number) {
-    const nextScale = clampScale(scale + delta);
-
-    setScale(nextScale);
-  }
-
-  function cancelFocusAnimation() {
-    if (focusAnimationRef.current === null) {
-      return;
-    }
-
-    window.cancelAnimationFrame(focusAnimationRef.current);
-    focusAnimationRef.current = null;
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -235,50 +314,6 @@ export function WorldMap({
     applyScaleDelta(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
   }
 
-  function focusCoordinates(coordinates: [number, number], targetScale: number) {
-    cancelFocusAnimation();
-
-    const [longitude, latitude] = coordinates;
-    const fromRotation = rotation;
-    const targetRotation: [number, number, number] = [
-      -longitude,
-      clampLatitude(-latitude),
-      fromRotation[2],
-    ];
-    const fromScale = scale;
-    const nextScale = Math.max(targetScale, fromScale);
-    const startedAt = window.performance.now();
-    const longitudeDelta = getShortestAngleDelta(fromRotation[0], targetRotation[0]);
-    const latitudeDelta = targetRotation[1] - fromRotation[1];
-
-    function animate(now: number) {
-      const progress = Math.min((now - startedAt) / FOCUS_ANIMATION_DURATION, 1);
-      const easedProgress = easeOutCubic(progress);
-
-      setRotation([
-        fromRotation[0] + longitudeDelta * easedProgress,
-        fromRotation[1] + latitudeDelta * easedProgress,
-        fromRotation[2],
-      ]);
-      const animatedScale = fromScale + (nextScale - fromScale) * easedProgress;
-
-      setScale(animatedScale);
-
-      if (progress < 1) {
-        focusAnimationRef.current = window.requestAnimationFrame(animate);
-        return;
-      }
-
-      focusAnimationRef.current = null;
-    }
-
-    focusAnimationRef.current = window.requestAnimationFrame(animate);
-  }
-
-  function focusCountry(centroid: [number, number], countryCode: string) {
-    focusCoordinates(centroid, getFocusedScale(countryCode));
-  }
-
   function handleSelectRegion(region: SelectedRegion) {
     setSelectedCountryLabel(region.regionName);
     setSelectedMarkerCoordinates(region.coordinates);
@@ -291,7 +326,7 @@ export function WorldMap({
     setSelectedMarkerCoordinates(centroid);
     setSelectedCountryCoordinates(centroid);
     focusCountry(centroid, countryCode);
-    onSelectCountry({ code: countryCode, name: countryName });
+    onSelectCountry({ code: countryCode, name: countryName, coordinates: centroid });
   }
 
   function handleCountryKeyDown(
@@ -328,10 +363,21 @@ export function WorldMap({
 
     if (selectedCountryCode && selectedCountryName) {
       setSelectedCountryLabel(selectedCountryName);
-      setSelectedMarkerCoordinates(selectedCountryCoordinates);
-      onSelectCountry({ code: selectedCountryCode, name: selectedCountryName });
+      setSelectedMarkerCoordinates(selectedCountryCoordinates ?? selectedCountryCoordinatesFromProps);
+      onSelectCountry({
+        code: selectedCountryCode,
+        name: selectedCountryName,
+        coordinates: selectedCountryCoordinates ?? selectedCountryCoordinatesFromProps ?? undefined,
+      });
     }
   }
+
+  const visibleSelectedLabel = selectedRegionCode
+    ? selectedCountryLabel
+    : selectedCountryName ?? selectedCountryLabel;
+  const visibleSelectedMarkerCoordinates = selectedRegionCode
+    ? selectedMarkerCoordinates
+    : selectedCountryCoordinatesFromProps ?? selectedMarkerCoordinates;
 
   return (
     <div
@@ -345,7 +391,7 @@ export function WorldMap({
       {!isImmersive ? (
       <div className="flex h-12 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950">
         <p className="min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
-          {hoveredCountryName ?? selectedCountryLabel ?? "Select a country on the globe"}
+          {hoveredCountryName ?? visibleSelectedLabel ?? "Select a country on the globe"}
         </p>
         <span className="hidden rounded-md border border-slate-200 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:border-slate-800 dark:text-slate-400 sm:inline">
           {isRegionalMode ? "Regional Detail" : "Interactive Globe"}
@@ -375,7 +421,7 @@ export function WorldMap({
             countryName={selectedCountryName}
             selectedRegionCode={selectedRegionCode}
             selectedLabel={selectedCountryLabel}
-            selectedMarkerCoordinates={selectedMarkerCoordinates}
+            selectedMarkerCoordinates={selectedRegionCode ? selectedMarkerCoordinates : null}
             statusLabel={adminBoundaryStatusLabel}
             onSelectRegion={handleSelectRegion}
             onReturnToGlobe={handleReturnToGlobe}
@@ -464,12 +510,12 @@ export function WorldMap({
               className="pointer-events-none"
             />
 
-            {selectedMarkerCoordinates && selectedWeatherCondition ? (
-              <WeatherConditionMarker condition={selectedWeatherCondition} coordinates={selectedMarkerCoordinates} />
+            {visibleSelectedMarkerCoordinates && selectedWeatherCondition ? (
+              <WeatherConditionMarker condition={selectedWeatherCondition} coordinates={visibleSelectedMarkerCoordinates} />
             ) : null}
 
-            {selectedCountryCode && selectedMarkerCoordinates ? (
-              <Marker coordinates={selectedMarkerCoordinates}>
+            {selectedCountryCode && visibleSelectedMarkerCoordinates ? (
+              <Marker coordinates={visibleSelectedMarkerCoordinates}>
                 <g className="weather-country-popout-anchor" style={{ pointerEvents: "all" }}>
                   <line x1="0" y1="-6" x2="0" y2="-36" className="weather-country-popout-line pointer-events-none" />
                   <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot pointer-events-none" />
@@ -487,7 +533,7 @@ export function WorldMap({
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={canShowDetailButton ? handleOpenRegionalDetail : undefined}
                     >
-                      <span>{selectedCountryLabel}</span>
+                      <span>{visibleSelectedLabel}</span>
                       {canShowDetailButton ? (
                         <button
                           type="button"
@@ -495,7 +541,7 @@ export function WorldMap({
                           onPointerDown={(event) => event.stopPropagation()}
                           onClick={handleOpenRegionalDetail}
                           className="weather-country-detail-button"
-                          aria-label={`${selectedCountryLabel} regional detail`}
+                          aria-label={`${visibleSelectedLabel} regional detail`}
                         >
                           Detail
                         </button>
