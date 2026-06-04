@@ -1,5 +1,7 @@
 import { WeatherMetricCard } from "@/components/weather/weather-metric-card";
+import { WeatherInsightStrip } from "@/components/weather/weather-insight-strip";
 import { WeatherReactiveButton } from "@/components/weather/weather-reactive-button";
+import { getWeatherInsights } from "@/lib/weather/weather-insights";
 import type { WeatherData } from "@/types/weather-data";
 
 type WeatherDetailPanelProps = {
@@ -35,6 +37,7 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel" }: Weathe
     minute: "2-digit",
   }).format(new Date());
   const temperatureText = `${weather.temperature}\u00b0C`;
+  const insights = getWeatherInsights(weather);
   const metricCards = [
     {
       label: "기온",
@@ -90,6 +93,9 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel" }: Weathe
         <p className="mt-4 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
           {weather.description}
         </p>
+      </div>
+      <div className="mt-4">
+        <WeatherInsightStrip insights={insights} />
       </div>
       <dl
         className={`mt-4 grid grid-cols-1 gap-3 text-sm ${

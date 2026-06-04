@@ -6,6 +6,8 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     feelsLike: 24,
     humidity: 52,
     windSpeed: 3.8,
+    pressureHpa: 1016,
+    visibilityKm: 14,
     condition: "cloudy",
     description: "Cloud cover is steady with a light coastal breeze across the region.",
   },
@@ -14,6 +16,8 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     feelsLike: 30,
     humidity: 41,
     windSpeed: 4.2,
+    pressureHpa: 1019,
+    visibilityKm: 18,
     condition: "sunny",
     description: "Clear and dry conditions are supporting strong daytime visibility.",
   },
@@ -22,6 +26,8 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     feelsLike: 19,
     humidity: 76,
     windSpeed: 2.9,
+    pressureHpa: 1008,
+    visibilityKm: 7,
     condition: "rainy",
     description: "A light rain band is moving through with elevated humidity.",
   },
@@ -30,6 +36,8 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     feelsLike: 16,
     humidity: 69,
     windSpeed: 5.1,
+    pressureHpa: 1012,
+    visibilityKm: 10,
     condition: "cloudy",
     description: "Cooler air and layered clouds are keeping conditions subdued.",
   },
@@ -44,6 +52,8 @@ const WEATHER_DATA_BY_REGION: Record<
     feelsLike: 25,
     humidity: 48,
     windSpeed: 3.4,
+    pressureHpa: 1018,
+    visibilityKm: 17,
     condition: "sunny",
     description: "Clear regional weather with dry air and bright skies.",
   },
@@ -52,6 +62,8 @@ const WEATHER_DATA_BY_REGION: Record<
     feelsLike: 17,
     humidity: 67,
     windSpeed: 4.7,
+    pressureHpa: 1011,
+    visibilityKm: 11,
     condition: "cloudy",
     description: "Cloud cover is building across the selected region.",
   },
@@ -60,6 +72,8 @@ const WEATHER_DATA_BY_REGION: Record<
     feelsLike: 20,
     humidity: 74,
     windSpeed: 3.1,
+    pressureHpa: 1009,
+    visibilityKm: 8,
     condition: "rainy",
     description: "Light rain is moving through the selected prefecture.",
   },
@@ -68,6 +82,8 @@ const WEATHER_DATA_BY_REGION: Record<
     feelsLike: 23,
     humidity: 61,
     windSpeed: 2.8,
+    pressureHpa: 1014,
+    visibilityKm: 13,
     condition: "cloudy",
     description: "Soft clouds and mild wind are shaping the regional weather.",
   },
@@ -78,6 +94,8 @@ const DEFAULT_WEATHER: Omit<WeatherData, "countryCode" | "countryName"> = {
   feelsLike: 21,
   humidity: 58,
   windSpeed: 3.3,
+  pressureHpa: 1013,
+  visibilityKm: 12,
   condition: "unknown",
   description: "Detailed mock weather for this location is being prepared.",
 };
@@ -117,12 +135,16 @@ function getRegionFallbackWeather(
   );
   const condition = conditionCycle[seed % conditionCycle.length];
   const temperature = 14 + (seed % 18);
+  const pressureHpa = 1004 + (seed % 28);
+  const visibilityKm = 6 + (seed % 16);
 
   return {
     temperature,
     feelsLike: temperature + ((seed % 5) - 2),
     humidity: 42 + (seed % 43),
     windSpeed: Number((1.8 + (seed % 48) / 10).toFixed(1)),
+    pressureHpa,
+    visibilityKm,
     condition,
     description: `${regionName} regional mock weather is ready for panel preview.`,
   };

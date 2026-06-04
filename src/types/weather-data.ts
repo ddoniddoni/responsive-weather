@@ -9,6 +9,8 @@ export type WeatherData = {
   feelsLike: number;
   humidity: number;
   windSpeed: number;
+  pressureHpa: number;
+  visibilityKm: number;
   condition: WeatherCondition;
   description: string;
 };

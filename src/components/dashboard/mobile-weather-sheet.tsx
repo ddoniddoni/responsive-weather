@@ -1,5 +1,7 @@
 import { WeatherMetricCard } from "@/components/weather/weather-metric-card";
+import { WeatherInsightStrip } from "@/components/weather/weather-insight-strip";
 import { WeatherReactiveButton } from "@/components/weather/weather-reactive-button";
+import { getWeatherInsights } from "@/lib/weather/weather-insights";
 import type { WeatherData } from "@/types/weather-data";
 
 type MobileWeatherSheetProps = {
@@ -31,6 +33,7 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date());
+  const insights = weather ? getWeatherInsights(weather) : [];
   const metricCards = weather
     ? [
         {
@@ -114,6 +117,9 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
                 <p className="mt-4 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {weather.description}
                 </p>
+                <div className="mt-4">
+                  <WeatherInsightStrip insights={insights} />
+                </div>
                 <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
                   {metricCards.map((metricCard) => (
                     <WeatherMetricCard
