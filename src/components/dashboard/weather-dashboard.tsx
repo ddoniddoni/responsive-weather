@@ -15,6 +15,13 @@ import { FORECAST_TIMES, WEATHER_LAYERS } from "@/constants/weather-layers";
 import { getMockWeatherByCountry, getMockWeatherByRegion } from "@/lib/weather/mock-weather";
 import type { SelectedCountry, SelectedRegion, WeatherOverlayPoint } from "@/types/weather-data";
 
+type WeatherOverlayApiResponse = {
+  data?: WeatherOverlayPoint[];
+  error?: string;
+};
+
+type WeatherOverlayLoadStatus = "loading" | "success" | "error" | "empty";
+
 export function WeatherDashboard() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
@@ -24,12 +31,53 @@ export function WeatherDashboard() {
   const [searchValue, setSearchValue] = useState("");
   const [isMobileWeatherOpen, setIsMobileWeatherOpen] = useState(false);
   const [isWeatherOverlayVisible, setIsWeatherOverlayVisible] = useState(true);
+  const [weatherOverlayPoints, setWeatherOverlayPoints] = useState<WeatherOverlayPoint[]>(WEATHER_OVERLAY_POINTS);
+  const [weatherOverlayLoadStatus, setWeatherOverlayLoadStatus] =
+    useState<WeatherOverlayLoadStatus>("loading");
   const isDark = theme === "dark";
 
   useEffect(() => {
     document.documentElement.classList.remove("light", "dark");
     document.documentElement.classList.add(theme);
   }, [theme]);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    async function loadWeatherOverlayPoints() {
+      setWeatherOverlayLoadStatus("loading");
+
+      try {
+        const response = await fetch("/api/weather-overlay", {
+          signal: abortController.signal,
+        });
+        const payload = (await response.json()) as WeatherOverlayApiResponse;
+
+        if (!response.ok) {
+          throw new Error(payload.error ?? "날씨 오버레이 데이터를 불러오지 못했습니다.");
+        }
+
+        if (!payload.data || payload.data.length === 0) {
+          setWeatherOverlayLoadStatus("empty");
+          return;
+        }
+
+        setWeatherOverlayPoints(payload.data);
+        setWeatherOverlayLoadStatus("success");
+      } catch {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        setWeatherOverlayPoints(WEATHER_OVERLAY_POINTS);
+        setWeatherOverlayLoadStatus("error");
+      }
+    }
+
+    loadWeatherOverlayPoints();
+
+    return () => abortController.abort();
+  }, []);
 
   const weather = useMemo(() => {
     if (selectedRegion) {
@@ -80,6 +128,15 @@ export function WeatherDashboard() {
     setIsMobileWeatherOpen(false);
   }
 
+  const weatherOverlayStatusLabel =
+    isWeatherOverlayVisible && weatherOverlayLoadStatus === "loading"
+      ? "실시간 날씨 불러오는 중"
+      : isWeatherOverlayVisible && weatherOverlayLoadStatus === "error"
+        ? "실시간 연결 실패, mock 데이터 표시 중"
+        : isWeatherOverlayVisible && weatherOverlayLoadStatus === "empty"
+          ? "표시할 실시간 날씨 없음"
+          : null;
+
   return (
     <div
       className={`relative h-screen min-h-[680px] max-w-full overflow-hidden transition-colors ${
@@ -93,8 +150,9 @@ export function WeatherDashboard() {
         selectedCountryCoordinates={selectedCountry?.coordinates ?? null}
         selectedRegionCode={selectedRegion?.regionCode ?? null}
         selectedWeatherCondition={weather?.condition ?? null}
-        weatherOverlayPoints={WEATHER_OVERLAY_POINTS}
+        weatherOverlayPoints={weatherOverlayPoints}
         isWeatherOverlayVisible={isWeatherOverlayVisible}
+        weatherOverlayStatusLabel={weatherOverlayStatusLabel}
         variant="immersive"
         onSelectCountry={handleSelectCountry}
         onSelectRegion={handleSelectRegion}
@@ -103,8 +161,6 @@ export function WeatherDashboard() {
       />
 
       <MapTopBar
-        activeLayer={activeLayer}
-        activeTimeLabel={FORECAST_TIMES[activeTime]}
         isDark={isDark}
         searchLocations={SEARCHABLE_LOCATIONS}
         searchValue={searchValue}

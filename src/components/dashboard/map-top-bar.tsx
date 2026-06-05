@@ -4,13 +4,10 @@ import { useMemo, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import type { SearchableLocation } from "@/constants/searchable-locations";
-import type { WeatherLayer } from "@/types/weather-layer";
 
 const NO_HIGHLIGHTED_RESULT = -1;
 
 type MapTopBarProps = {
-  activeLayer: WeatherLayer;
-  activeTimeLabel: string;
   isDark: boolean;
   searchLocations: SearchableLocation[];
   searchValue: string;
@@ -47,8 +44,6 @@ function ThemeToggleIcon({ isDark }: { isDark: boolean }) {
 }
 
 export function MapTopBar({
-  activeLayer,
-  activeTimeLabel,
   isDark,
   searchLocations,
   searchValue,
@@ -254,9 +249,6 @@ export function MapTopBar({
         </div>
       </div>
       <div className="pointer-events-auto hidden items-center gap-2 self-start md:flex md:self-auto">
-        <div className="hidden rounded-md border border-white/75 bg-white/95 px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-lg shadow-slate-950/12 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/88 dark:text-slate-200 sm:block">
-          {activeLayer.label} / {activeTimeLabel}
-        </div>
         <button
           type="button"
           aria-label={`${themeLabel} 모드로 전환`}

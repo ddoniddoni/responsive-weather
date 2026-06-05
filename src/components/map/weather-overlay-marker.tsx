@@ -18,6 +18,51 @@ const CONDITION_LABEL_MAP: Record<WeatherOverlayPoint["condition"], string> = {
   unknown: "Unknown",
 };
 
+const MARKER_VISUAL_MAP: Record<
+  WeatherOverlayPoint["condition"],
+  {
+    coreFill: string;
+    haloFill: string;
+    haloStroke: string;
+  }
+> = {
+  sunny: {
+    coreFill: "#d97706",
+    haloFill: "rgba(255, 247, 237, 0.88)",
+    haloStroke: "rgba(217, 119, 6, 0.42)",
+  },
+  cloudy: {
+    coreFill: "#64748b",
+    haloFill: "rgba(248, 250, 252, 0.82)",
+    haloStroke: "rgba(100, 116, 139, 0.42)",
+  },
+  foggy: {
+    coreFill: "#94a3b8",
+    haloFill: "rgba(248, 250, 252, 0.82)",
+    haloStroke: "rgba(100, 116, 139, 0.42)",
+  },
+  rainy: {
+    coreFill: "#0284c7",
+    haloFill: "rgba(240, 249, 255, 0.84)",
+    haloStroke: "rgba(2, 132, 199, 0.42)",
+  },
+  stormy: {
+    coreFill: "#7c3aed",
+    haloFill: "rgba(245, 243, 255, 0.84)",
+    haloStroke: "rgba(124, 58, 237, 0.46)",
+  },
+  snowy: {
+    coreFill: "#0891b2",
+    haloFill: "rgba(236, 254, 255, 0.84)",
+    haloStroke: "rgba(8, 145, 178, 0.42)",
+  },
+  unknown: {
+    coreFill: "#94a3b8",
+    haloFill: "rgba(248, 250, 252, 0.76)",
+    haloStroke: "rgba(100, 116, 139, 0.34)",
+  },
+};
+
 function handleMarkerKeyDown(
   event: ReactKeyboardEvent<SVGGElement>,
   point: WeatherOverlayPoint,
@@ -35,6 +80,7 @@ export function WeatherOverlayMarker({ point, onSelectPoint }: WeatherOverlayMar
   const conditionLabel = CONDITION_LABEL_MAP[point.condition];
   const temperatureLabel = `${point.temperature}°`;
   const ariaLabel = `${point.label}, ${conditionLabel}, ${point.temperature} degrees`;
+  const markerVisual = MARKER_VISUAL_MAP[point.condition];
 
   return (
     <Marker coordinates={[point.longitude, point.latitude]}>
@@ -47,8 +93,23 @@ export function WeatherOverlayMarker({ point, onSelectPoint }: WeatherOverlayMar
         onKeyDown={(event) => handleMarkerKeyDown(event, point, onSelectPoint)}
       >
         <title>{ariaLabel}</title>
-        <circle cx="0" cy="0" r="14" className="weather-overlay-marker-halo" />
-        <circle cx="0" cy="0" r="8.5" className="weather-overlay-marker-core" />
+        <circle
+          cx="0"
+          cy="0"
+          r="14"
+          className="weather-overlay-marker-halo"
+          fill={markerVisual.haloFill}
+          stroke={markerVisual.haloStroke}
+          style={{ fill: markerVisual.haloFill, stroke: markerVisual.haloStroke }}
+        />
+        <circle
+          cx="0"
+          cy="0"
+          r="8.5"
+          className="weather-overlay-marker-core"
+          fill={markerVisual.coreFill}
+          style={{ fill: markerVisual.coreFill }}
+        />
         {point.condition === "sunny" ? (
           <g className="weather-overlay-marker-icon weather-overlay-marker-sun" aria-hidden="true">
             <circle cx="0" cy="0" r="4" />

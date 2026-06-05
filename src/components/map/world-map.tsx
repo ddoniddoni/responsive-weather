@@ -54,6 +54,7 @@ type WorldMapProps = {
   selectedWeatherCondition: WeatherCondition | null;
   weatherOverlayPoints?: WeatherOverlayPoint[];
   isWeatherOverlayVisible?: boolean;
+  weatherOverlayStatusLabel?: string | null;
   variant?: "panel" | "immersive";
   onSelectCountry: (country: SelectedCountry) => void;
   onSelectRegion: (region: SelectedRegion) => void;
@@ -159,6 +160,7 @@ export function WorldMap({
   selectedWeatherCondition,
   weatherOverlayPoints = [],
   isWeatherOverlayVisible = false,
+  weatherOverlayStatusLabel = null,
   variant = "panel",
   onSelectCountry,
   onSelectRegion,
@@ -668,6 +670,14 @@ export function WorldMap({
             >
               Reset
             </button>
+            {weatherOverlayStatusLabel ? (
+              <div
+                role="status"
+                className="min-h-10 rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100"
+              >
+                {weatherOverlayStatusLabel}
+              </div>
+            ) : null}
           </div>
         ) : null}
 
