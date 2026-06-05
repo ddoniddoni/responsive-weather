@@ -1,45 +1,45 @@
-# STEP-001: Realtime weather overlay requirements
+# STEP-001: 실시간 날씨 오버레이 요구사항 정의
 
-## Goal
+## 목표
 
-- Redefine the map experience so the globe can show realtime weather signals directly.
-- Keep the existing selected-location weather panel, but add an explicit weather overlay mode for the globe.
-- Define the API, data flow, UI boundaries, and completion criteria before implementation.
+- 지구본 위에 실시간 날씨 신호를 직접 표현할 수 있도록 지도 경험을 새로 정의한다.
+- 기존 선택 지역 날씨 패널은 유지하되, 지구본 전용 날씨 오버레이 모드를 명확히 추가한다.
+- 구현 전에 API 방향, 데이터 흐름, UI 경계, 완료 기준을 문서로 정리한다.
 
-## Scope
+## 작업 범위
 
-- Update the product requirements to allow realtime weather markers or lightweight visual layers on the globe.
-- Keep Open-Meteo as the preferred weather API for the first realtime implementation.
-- Define representative weather points using country or city coordinates instead of fetching every country at once.
-- Normalize API responses before rendering them on the globe or in the weather panel.
-- Add loading, error, empty, and refresh-state requirements for overlay data.
-- Require a user-visible overlay toggle so the map can still be used as a clean selection surface.
+- 제품 요구사항에서 지구본 위 실시간 날씨 마커 또는 가벼운 시각 레이어를 허용하도록 정리한다.
+- 첫 실시간 구현 API는 Open-Meteo를 우선 사용한다.
+- 모든 국가를 한 번에 요청하지 않고 국가 또는 도시 대표 좌표를 기준으로 날씨 지점을 정의한다.
+- API 응답은 지구본 또는 날씨 패널에 렌더링하기 전에 앱 내부 데이터로 정규화한다.
+- 오버레이 데이터의 로딩, 에러, 빈 상태, 새로고침 상태 요구사항을 포함한다.
+- 지도가 항상 깨끗한 선택 표면으로도 동작할 수 있도록 사용자에게 보이는 오버레이 토글을 요구한다.
 
-## Out of Scope
+## 제외 범위
 
-- Implementing the realtime overlay UI in this step.
-- Adding paid weather providers, API keys, authentication, database storage, or user accounts.
-- Rendering full radar tiles, satellite imagery, severe-alert polygons, or high-density forecast layers.
-- Polling every country or region continuously.
-- Changing the package manager or core Next.js, TypeScript, Tailwind CSS, and shadcn/ui stack.
+- 이 Step에서는 실시간 오버레이 UI를 구현하지 않는다.
+- 유료 날씨 제공자, API 키, 인증, 데이터베이스, 사용자 계정은 추가하지 않는다.
+- 레이더 타일, 위성 이미지, 기상 특보 폴리곤, 고밀도 예보 레이어는 렌더링하지 않는다.
+- 모든 국가 또는 지역을 계속 폴링하지 않는다.
+- npm, Next.js, TypeScript, Tailwind CSS, shadcn/ui 등 핵심 스택은 변경하지 않는다.
 
-## Completion Criteria
+## 완료 기준
 
-- `PRD.md` documents realtime globe weather overlay as a supported product direction.
-- `AGENTS.md` documents the overlay-mode exception to the previous no-weather-on-map rule.
-- `README.md` summarizes the realtime overlay direction for project readers.
-- Outdated pre-overlay Step documents are removed to keep the current product direction clear.
-- The first implementation target is clear: Open-Meteo current weather by representative coordinates.
-- The Step document defines boundaries that protect performance, accessibility, and API usage.
-- Documentation changes are reviewed with `git diff`.
+- `PRD.md`에 실시간 지구본 날씨 오버레이가 제품 방향으로 문서화되어 있다.
+- `AGENTS.md`에 기존 지도 위 날씨 표시 금지 규칙의 오버레이 모드 예외가 문서화되어 있다.
+- `README.md`에 실시간 오버레이 방향이 프로젝트 독자를 위해 요약되어 있다.
+- 이전 컨셉 기준의 오래된 Step 문서는 제거되어 현재 제품 방향이 명확하다.
+- 첫 구현 목표가 Open-Meteo 현재 날씨와 대표 좌표 기반 요청으로 명확하다.
+- Step 문서가 성능, 접근성, API 사용량을 보호하는 경계를 정의한다.
+- 문서 변경 내용을 `git diff`로 검토한다.
 
-## Checklist
+## 체크리스트
 
-- [x] Create Step 001 branch
-- [x] Add Step 001 plan
-- [x] Update PRD requirements
-- [x] Update AGENTS map rules
-- [x] Update README overview
-- [x] Remove outdated pre-overlay Step documents
-- [x] Review documentation diff
-- [x] Commit and push Step 001 branch
+- [x] Step 001 브랜치 생성
+- [x] Step 001 계획 작성
+- [x] PRD 요구사항 수정
+- [x] AGENTS 지도 규칙 수정
+- [x] README 개요 수정
+- [x] 이전 컨셉 기준 Step 문서 제거
+- [x] 문서 diff 검토
+- [x] Step 001 브랜치 커밋 및 push

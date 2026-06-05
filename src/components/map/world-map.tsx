@@ -12,11 +12,12 @@ import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from
 
 import { RegionalMap } from "@/components/map/regional-map";
 import { WeatherConditionMarker } from "@/components/map/weather-condition-marker";
+import { WeatherOverlayMarker } from "@/components/map/weather-overlay-marker";
 import { useAdminBoundaries } from "@/hooks/use-admin-boundaries";
 import type { AdminBoundaryLoadStatus } from "@/types/admin-boundary";
 import type { MapMode } from "@/types/map-mode";
 import type { WeatherCondition } from "@/types/weather";
-import type { SelectedCountry, SelectedRegion } from "@/types/weather-data";
+import type { SelectedCountry, SelectedRegion, WeatherOverlayPoint } from "@/types/weather-data";
 
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const LAND_COLORS = ["#9ca3af", "#a7b0ba", "#8fa2ad", "#b0a494", "#93a69a"];
@@ -28,6 +29,8 @@ const ZOOM_STEP = 220;
 const FOCUS_ANIMATION_DURATION = 420;
 const DRAG_LONGITUDE_SENSITIVITY = 0.12;
 const DRAG_LATITUDE_SENSITIVITY = 0.1;
+const DEGREE_TO_RADIAN = Math.PI / 180;
+const VISIBLE_HEMISPHERE_THRESHOLD = 0.06;
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
@@ -49,9 +52,13 @@ type WorldMapProps = {
   selectedCountryCoordinates: [number, number] | null;
   selectedRegionCode: string | null;
   selectedWeatherCondition: WeatherCondition | null;
+  weatherOverlayPoints?: WeatherOverlayPoint[];
+  isWeatherOverlayVisible?: boolean;
   variant?: "panel" | "immersive";
   onSelectCountry: (country: SelectedCountry) => void;
   onSelectRegion: (region: SelectedRegion) => void;
+  onSelectWeatherOverlayPoint?: (point: WeatherOverlayPoint) => void;
+  onToggleWeatherOverlay?: () => void;
 };
 
 type GeographyProperties = {
@@ -109,6 +116,26 @@ function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
   return labelMap[status];
 }
 
+function isCoordinateOnVisibleHemisphere(
+  coordinates: [number, number],
+  rotation: [number, number, number],
+) {
+  const [longitude, latitude] = coordinates;
+  const centerLongitude = -rotation[0];
+  const centerLatitude = -rotation[1];
+  const longitudeRadian = longitude * DEGREE_TO_RADIAN;
+  const latitudeRadian = latitude * DEGREE_TO_RADIAN;
+  const centerLongitudeRadian = centerLongitude * DEGREE_TO_RADIAN;
+  const centerLatitudeRadian = centerLatitude * DEGREE_TO_RADIAN;
+  const visibility =
+    Math.sin(latitudeRadian) * Math.sin(centerLatitudeRadian) +
+    Math.cos(latitudeRadian) *
+      Math.cos(centerLatitudeRadian) *
+      Math.cos(longitudeRadian - centerLongitudeRadian);
+
+  return visibility > VISIBLE_HEMISPHERE_THRESHOLD;
+}
+
 function subscribeToClientMount(onStoreChange: () => void) {
   onStoreChange();
 
@@ -130,9 +157,13 @@ export function WorldMap({
   selectedCountryCoordinates: selectedCountryCoordinatesFromProps,
   selectedRegionCode,
   selectedWeatherCondition,
+  weatherOverlayPoints = [],
+  isWeatherOverlayVisible = false,
   variant = "panel",
   onSelectCountry,
   onSelectRegion,
+  onSelectWeatherOverlayPoint,
+  onToggleWeatherOverlay,
 }: WorldMapProps) {
   const hasMounted = useSyncExternalStore(
     subscribeToClientMount,
@@ -329,6 +360,25 @@ export function WorldMap({
     onSelectCountry({ code: countryCode, name: countryName, coordinates: centroid });
   }
 
+  function handleSelectWeatherOverlayPoint(point: WeatherOverlayPoint) {
+    setMapMode("globe");
+    setSelectedCountryLabel(point.countryName);
+    setSelectedMarkerCoordinates([point.longitude, point.latitude]);
+    setSelectedCountryCoordinates([point.longitude, point.latitude]);
+    focusCountry([point.longitude, point.latitude], point.countryCode);
+
+    if (onSelectWeatherOverlayPoint) {
+      onSelectWeatherOverlayPoint(point);
+      return;
+    }
+
+    onSelectCountry({
+      code: point.countryCode,
+      name: point.countryName,
+      coordinates: [point.longitude, point.latitude],
+    });
+  }
+
   function handleCountryKeyDown(
     event: ReactKeyboardEvent<SVGPathElement>,
     countryName: string,
@@ -378,6 +428,10 @@ export function WorldMap({
   const visibleSelectedMarkerCoordinates = selectedRegionCode
     ? selectedMarkerCoordinates
     : selectedCountryCoordinatesFromProps ?? selectedMarkerCoordinates;
+  const canShowSelectedMarker =
+    visibleSelectedMarkerCoordinates !== null &&
+    (isRegionalMode ||
+      isCoordinateOnVisibleHemisphere(visibleSelectedMarkerCoordinates, rotation));
 
   return (
     <div
@@ -510,11 +564,19 @@ export function WorldMap({
               className="pointer-events-none"
             />
 
-            {visibleSelectedMarkerCoordinates && selectedWeatherCondition ? (
+            {isWeatherOverlayVisible
+              ? weatherOverlayPoints
+                  .filter((point) => isCoordinateOnVisibleHemisphere([point.longitude, point.latitude], rotation))
+                  .map((point) => (
+                    <WeatherOverlayMarker key={point.id} point={point} onSelectPoint={handleSelectWeatherOverlayPoint} />
+                  ))
+              : null}
+
+            {canShowSelectedMarker && visibleSelectedMarkerCoordinates && selectedWeatherCondition ? (
               <WeatherConditionMarker condition={selectedWeatherCondition} coordinates={visibleSelectedMarkerCoordinates} />
             ) : null}
 
-            {selectedCountryCode && visibleSelectedMarkerCoordinates ? (
+            {selectedCountryCode && canShowSelectedMarker && visibleSelectedMarkerCoordinates ? (
               <Marker coordinates={visibleSelectedMarkerCoordinates}>
                 <g className="weather-country-popout-anchor" style={{ pointerEvents: "all" }}>
                   <line x1="0" y1="-6" x2="0" y2="-36" className="weather-country-popout-line pointer-events-none" />
@@ -558,8 +620,30 @@ export function WorldMap({
           </div>
         )}
 
+        {!isRegionalMode && onToggleWeatherOverlay ? (
+          <div className={`absolute right-3 z-20 ${isImmersive ? "top-48 md:top-24" : "top-3"}`}>
+            <button
+              type="button"
+              onClick={onToggleWeatherOverlay}
+              aria-pressed={isWeatherOverlayVisible}
+              aria-label={isWeatherOverlayVisible ? "Hide globe weather overlay" : "Show globe weather overlay"}
+              className={`inline-flex h-10 items-center justify-center rounded-md border px-3 text-xs font-semibold shadow-sm backdrop-blur transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
+                isWeatherOverlayVisible
+                  ? "border-cyan-500/70 bg-cyan-950/88 text-cyan-50 hover:bg-cyan-900 dark:border-cyan-300/50 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
+                  : "border-slate-200 bg-white/92 text-slate-900 hover:bg-white dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
+              }`}
+            >
+              Weather
+            </button>
+          </div>
+        ) : null}
+
         {!isRegionalMode ? (
-          <div className={`absolute right-3 z-20 flex gap-2 ${isImmersive ? "top-48 md:top-24" : "top-3"}`}>
+          <div
+            className={`absolute left-3 z-20 flex flex-wrap gap-2 md:left-4 ${
+              isImmersive ? "top-48 md:top-[31rem]" : "top-3"
+            }`}
+          >
             <button
               type="button"
               onClick={handleZoomIn}

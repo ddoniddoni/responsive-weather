@@ -8,9 +8,10 @@ type WeatherDetailPanelProps = {
   weather: WeatherData | null;
   theme: "light" | "dark";
   variant?: "panel" | "overlay";
+  onClose?: () => void;
 };
 
-export function WeatherDetailPanel({ weather, theme, variant = "panel" }: WeatherDetailPanelProps) {
+export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose }: WeatherDetailPanelProps) {
   const isOverlay = variant === "overlay";
   const panelClassName = isOverlay
     ? "rounded-md border border-white/70 bg-white/94 p-4 shadow-2xl shadow-slate-950/20 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/88"
@@ -71,9 +72,21 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel" }: Weathe
           <h2 className="mt-2 truncate text-xl font-semibold text-slate-950 dark:text-slate-100">{title}</h2>
           <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
         </div>
-        <WeatherReactiveButton condition={weather.condition} theme={theme}>
-          {weather.condition}
-        </WeatherReactiveButton>
+        <div className="flex shrink-0 items-center gap-2">
+          <WeatherReactiveButton condition={weather.condition} theme={theme}>
+            {weather.condition}
+          </WeatherReactiveButton>
+          {onClose ? (
+            <button
+              type="button"
+              aria-label="날씨 상세 패널 닫기"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white/86 text-lg font-semibold leading-none text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-slate-700 dark:bg-slate-900/82 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              x
+            </button>
+          ) : null}
+        </div>
       </div>
       <div className="mt-4 border-y border-slate-200 py-4 dark:border-slate-800">
         <div className="flex items-end justify-between gap-4">

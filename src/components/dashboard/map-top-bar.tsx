@@ -20,6 +20,32 @@ type MapTopBarProps = {
   onToggleTheme: () => void;
 };
 
+function ThemeToggleIcon({ isDark }: { isDark: boolean }) {
+  if (isDark) {
+    return (
+      <svg className="theme-toggle-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M20.2 15.4A7.7 7.7 0 0 1 8.6 3.8 8.8 8.8 0 1 0 20.2 15.4Z"
+          fill="currentColor"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className="theme-toggle-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2" fill="currentColor" />
+      <path
+        d="M12 2.5V5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
 export function MapTopBar({
   activeLayer,
   activeTimeLabel,
@@ -111,20 +137,23 @@ export function MapTopBar({
   return (
     <header className="pointer-events-none absolute inset-x-3 top-3 z-30 flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] flex-col gap-2 overflow-hidden md:inset-x-4 md:w-auto md:max-w-none md:flex-row md:items-center md:justify-between md:overflow-visible">
       <div className="flex min-w-0 max-w-full flex-col gap-2 md:flex-1 md:flex-row md:items-center">
-        <div className="pointer-events-auto flex items-center justify-between gap-2 md:block">
+        <div className="pointer-events-auto flex items-center justify-between gap-2">
           <div className="flex h-11 shrink-0 items-center gap-2 rounded-md border border-white/75 bg-white/95 px-3 text-slate-950 shadow-lg shadow-slate-950/12 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/88 dark:text-slate-100">
-            <div className="flex h-7 w-7 items-center justify-center rounded bg-slate-950 text-[11px] font-black text-white dark:bg-white dark:text-slate-950">
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded bg-slate-950 text-[11px] font-black leading-none text-white dark:bg-white dark:text-slate-950">
               RW
             </div>
-            <span className="hidden text-base font-bold tracking-normal min-[420px]:block">Responsive Weather</span>
+            <span className="hidden translate-y-px text-base font-bold leading-none tracking-normal min-[420px]:block">
+              Responsive Weather
+            </span>
           </div>
           <button
             type="button"
             aria-label={`${themeLabel} 모드로 전환`}
             onClick={onToggleTheme}
-            className="h-11 rounded-md border border-white/75 bg-white/95 px-4 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-950/12 backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-slate-700/80 dark:bg-slate-950/88 dark:text-slate-100 dark:hover:bg-slate-900 md:hidden"
+            className="theme-toggle-button md:hidden"
           >
-            {themeLabel}
+            <ThemeToggleIcon isDark={isDark} />
+            <span className="sr-only">{themeLabel} 모드로 전환</span>
           </button>
         </div>
         <div className="pointer-events-auto relative w-full min-w-0 max-w-full flex-1 md:max-w-[460px]">
@@ -232,9 +261,10 @@ export function MapTopBar({
           type="button"
           aria-label={`${themeLabel} 모드로 전환`}
           onClick={onToggleTheme}
-          className="h-11 rounded-md border border-white/75 bg-white/95 px-4 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-950/12 backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-slate-700/80 dark:bg-slate-950/88 dark:text-slate-100 dark:hover:bg-slate-900"
+          className="theme-toggle-button"
         >
-          {themeLabel}
+          <ThemeToggleIcon isDark={isDark} />
+          <span className="sr-only">{themeLabel} 모드로 전환</span>
         </button>
       </div>
     </header>
