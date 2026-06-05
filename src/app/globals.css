@@ -433,36 +433,36 @@ html.dark .weather-country-popout-dot {
   stroke: rgba(255, 255, 255, 0.88);
 }
 
-.weather-globe-marker .weather-globe-shadow {
+.weather-map-marker .weather-map-shadow {
   fill: rgba(15, 23, 42, 0.18);
 }
 
-.weather-globe-marker .weather-globe-sun circle {
+.weather-map-marker .weather-map-sun circle {
   fill: #d97706;
   filter: drop-shadow(0 0 5px rgba(217, 119, 6, 0.38));
-  animation: globe-sun-pulse 1.8s ease-in-out infinite;
+  animation: map-sun-pulse 1.8s ease-in-out infinite;
 }
 
-.weather-globe-marker .weather-globe-cloud {
+.weather-map-marker .weather-map-cloud {
   fill: #e5e7eb;
   stroke: #6b7280;
   stroke-width: 0.8;
   filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.35));
-  animation: globe-cloud-float 2.2s ease-in-out infinite;
+  animation: map-cloud-float 2.2s ease-in-out infinite;
 }
 
-.weather-globe-marker .weather-globe-rain line {
+.weather-map-marker .weather-map-rain line {
   stroke: #0e7490;
   stroke-width: 1.5;
   stroke-linecap: round;
-  animation: globe-rain-fall 0.9s linear infinite;
+  animation: map-rain-fall 0.9s linear infinite;
 }
 
-.weather-globe-marker .weather-globe-rain line:nth-child(2) {
+.weather-map-marker .weather-map-rain line:nth-child(2) {
   animation-delay: -0.2s;
 }
 
-.weather-globe-marker .weather-globe-rain line:nth-child(3) {
+.weather-map-marker .weather-map-rain line:nth-child(3) {
   animation-delay: -0.4s;
 }
 
@@ -564,7 +564,7 @@ html.dark .weather-overlay-marker-label {
   stroke: rgba(15, 23, 42, 0.9);
 }
 
-@keyframes globe-sun-pulse {
+@keyframes map-sun-pulse {
   0%,
   100% {
     transform: scale(1);
@@ -574,7 +574,7 @@ html.dark .weather-overlay-marker-label {
   }
 }
 
-@keyframes globe-cloud-float {
+@keyframes map-cloud-float {
   0%,
   100% {
     transform: translateY(0);
@@ -584,7 +584,7 @@ html.dark .weather-overlay-marker-label {
   }
 }
 
-@keyframes globe-rain-fall {
+@keyframes map-rain-fall {
   0% {
     opacity: 0.1;
     transform: translateY(-1px);
@@ -617,9 +617,9 @@ html.dark .weather-overlay-marker-label {
   .weather-button .weather-rain-drop,
   .weather-button .weather-cloud,
   .weather-country-popout-anchor,
-  .weather-globe-marker .weather-globe-sun circle,
-  .weather-globe-marker .weather-globe-cloud,
-  .weather-globe-marker .weather-globe-rain line {
+  .weather-map-marker .weather-map-sun circle,
+  .weather-map-marker .weather-map-cloud,
+  .weather-map-marker .weather-map-rain line {
     animation: none;
   }
 }

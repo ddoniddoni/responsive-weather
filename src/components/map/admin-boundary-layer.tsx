@@ -14,7 +14,7 @@ type AdminBoundaryLayerProps = {
   countryCode: string | null;
   countryName: string | null;
   selectedRegionCode: string | null;
-  variant?: "globe" | "regional";
+  variant?: "world" | "regional";
   onSelectRegion: (region: SelectedRegion) => void;
 };
 
@@ -27,7 +27,7 @@ export function AdminBoundaryLayer({
   countryCode,
   countryName,
   selectedRegionCode,
-  variant = "globe",
+  variant = "world",
   onSelectRegion,
 }: AdminBoundaryLayerProps) {
   if (!boundaries || !countryCode || !countryName) {

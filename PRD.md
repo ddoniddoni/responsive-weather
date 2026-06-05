@@ -39,7 +39,7 @@ Responsive Weather의 목표는 다음과 같다.
 
 사용자는 처음 웹사이트에 접속하면 대시보드 형태의 Home 화면을 본다.
 
-Home 화면에는 2D 지구본 또는 세계지도 형태의 인터랙티브 지도가 표시된다.
+Home 화면에는 평면 세계지도 형태의 인터랙티브 날씨 지도가 표시된다.
 
 사용자는 지도에서 특정 나라 또는 지역을 클릭할 수 있다.
 
@@ -59,7 +59,7 @@ Home은 이 서비스의 메인 화면이다.
 
 Home 화면은 다음 요소를 포함한다.
 
-- 2D 세계지도 또는 지구본 스타일 지도
+- 평면 세계지도 스타일 지도
 - 지도 확대 버튼
 - 지도 축소 버튼
 - 국가 또는 지역 선택 기능
@@ -243,7 +243,7 @@ type WeatherCondition =
 - 날씨 검색 자동완성
 - 모든 국가의 완전한 날씨 데이터
 - 복잡한 지도 레이어
-- 고급 3D 지구본
+- 고급 3D 지도
 - 다국어 지원
 - PWA
 - 알림 기능
@@ -376,18 +376,18 @@ Responsive Weather는 단순한 날씨 정보 앱이 아니다.
 5. 추후 기능 확장이 쉬운 구조인가?
 ---
 
-## 16. Realtime Globe Weather Overlay
+## 16. Realtime Weather Map Overlay
 
-Responsive Weather now supports a product direction where the globe can show realtime weather signals directly on the map.
+Responsive Weather는 지구본이 아니라 평면 세계지도 위에 실시간 날씨 신호를 직접 표현하는 방향으로 전환한다.
 
-This is an explicit extension of the original MVP rule. The default MVP map still focuses on country and region selection, but a separate overlay mode may display weather markers or lightweight visual layers on the globe when the user enables it.
+기본 지도는 국가와 지역 선택에 집중하되, 오버레이 모드에서는 대표 날씨 지점의 compact 마커 또는 가벼운 날씨 레이어를 평면 지도 위에 표시할 수 있다.
 
 ### 16.1 Overlay Goal
 
-- Let users scan global weather conditions directly from the globe.
-- Keep the selected-location weather panel as the detailed view.
-- Use map overlays for quick ambient signals, not full detailed forecasts.
-- Make the overlay optional so the globe can remain a clean selection surface.
+- 사용자가 세계 날씨 상태를 평면 지도에서 빠르게 훑어볼 수 있게 한다.
+- 선택 위치의 상세 날씨는 기존 날씨 패널에서 보여준다.
+- 지도 오버레이는 전체 예보 카드가 아니라 빠른 시각 신호로 사용한다.
+- 오버레이는 사용자가 켜고 끌 수 있어야 한다.
 
 ### 16.2 API Direction
 
@@ -415,7 +415,7 @@ Representative weather points
 -> Open-Meteo current weather request
 -> normalizeWeather()
 -> WeatherOverlayPoint[]
--> globe overlay markers or lightweight layers
+-> flat weather map overlay markers or lightweight layers
 -> selected point/country opens the existing weather detail panel
 ```
 
@@ -438,8 +438,8 @@ type WeatherOverlayPoint = {
 ### 16.5 UI Rules
 
 - The overlay must be controlled by a visible toggle.
-- The globe may show compact markers, temperature dots, or weather-condition colors.
-- The globe should not show large detailed weather cards over the map.
+- The flat map may show compact markers, temperature dots, or weather-condition colors.
+- The flat map should not show large detailed weather cards over the map.
 - Detailed values remain in the weather panel or mobile sheet.
 - Marker visuals must not rely on color alone; labels, icons, aria labels, or tooltips should identify the condition.
 - Mobile layout must avoid dense overlays that block country selection.

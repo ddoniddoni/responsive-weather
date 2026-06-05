@@ -1,14 +1,12 @@
 "use client";
 
 import { geoCentroid } from "d3-geo";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
-  PointerEvent as ReactPointerEvent,
-  WheelEvent as ReactWheelEvent,
 } from "react";
-import { ComposableMap, Geographies, Geography, Graticule, Marker, Sphere } from "react-simple-maps";
+import { ComposableMap, Geographies, Geography, Graticule, Marker, ZoomableGroup } from "react-simple-maps";
 
 import { RegionalMap } from "@/components/map/regional-map";
 import { WeatherConditionMarker } from "@/components/map/weather-condition-marker";
@@ -20,17 +18,13 @@ import type { WeatherCondition } from "@/types/weather";
 import type { SelectedCountry, SelectedRegion, WeatherOverlayPoint } from "@/types/weather-data";
 
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
-const LAND_COLORS = ["#9ca3af", "#a7b0ba", "#8fa2ad", "#b0a494", "#93a69a"];
-const DEFAULT_SCALE = 220;
-const MIN_SCALE = 160;
-const MAX_SCALE = 5200;
-const FOCUSED_SCALE = 520;
-const ZOOM_STEP = 220;
-const FOCUS_ANIMATION_DURATION = 420;
-const DRAG_LONGITUDE_SENSITIVITY = 0.12;
-const DRAG_LATITUDE_SENSITIVITY = 0.1;
-const DEGREE_TO_RADIAN = Math.PI / 180;
-const VISIBLE_HEMISPHERE_THRESHOLD = 0.06;
+const LAND_COLORS = ["#a7b0ba", "#b4bdc5", "#91a8b5", "#c0b29d", "#98afa2"];
+const DEFAULT_CENTER: [number, number] = [0, 18];
+const DEFAULT_ZOOM = 1;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 8;
+const FOCUSED_ZOOM = 2.8;
+const ZOOM_STEP = 0.65;
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
@@ -39,10 +33,10 @@ const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   "United States of America": "USA",
 };
 
-const FOCUSED_SCALE_BY_COUNTRY_CODE: Record<string, number> = {
-  FRA: 620,
-  JPN: 1500,
-  KOR: 1800,
+const FOCUSED_ZOOM_BY_COUNTRY_CODE: Record<string, number> = {
+  FRA: 3,
+  JPN: 4.8,
+  KOR: 5.2,
 };
 
 type WorldMapProps = {
@@ -76,6 +70,16 @@ type GeographyFeature = {
   geometry: unknown;
 };
 
+type MapPosition = {
+  center: [number, number];
+  zoom: number;
+};
+
+type ZoomableGroupMoveEnd = {
+  coordinates: [number, number];
+  zoom: number;
+};
+
 function getCountryCode(feature: GeographyFeature, countryName: string) {
   return (
     feature.properties.iso_a3 ??
@@ -85,56 +89,32 @@ function getCountryCode(feature: GeographyFeature, countryName: string) {
   );
 }
 
-function clampScale(scale: number) {
-  return Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
-}
-
 function clampLatitude(latitude: number) {
-  return Math.max(-60, Math.min(60, latitude));
+  return Math.max(-72, Math.min(78, latitude));
 }
 
-function getShortestAngleDelta(from: number, to: number) {
-  return ((((to - from) % 360) + 540) % 360) - 180;
+function clampZoom(zoom: number) {
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
 }
 
-function easeOutCubic(progress: number) {
-  return 1 - (1 - progress) ** 3;
+function normalizeCenter([longitude, latitude]: [number, number]): [number, number] {
+  return [Math.max(-180, Math.min(180, longitude)), clampLatitude(latitude)];
 }
 
-function getFocusedScale(countryCode: string) {
-  return FOCUSED_SCALE_BY_COUNTRY_CODE[countryCode] ?? FOCUSED_SCALE;
+function getFocusedZoom(countryCode: string) {
+  return FOCUSED_ZOOM_BY_COUNTRY_CODE[countryCode] ?? FOCUSED_ZOOM;
 }
 
 function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
   const labelMap: Record<AdminBoundaryLoadStatus, string | null> = {
     idle: null,
-    loading: "Loading regional boundaries",
+    loading: "지역 경계를 불러오는 중",
     success: null,
-    error: "Regional boundaries temporarily unavailable",
-    unsupported: "Regional boundaries are not available here",
+    error: "지역 경계를 잠시 불러올 수 없습니다",
+    unsupported: "이 위치는 지역 경계를 지원하지 않습니다",
   };
 
   return labelMap[status];
-}
-
-function isCoordinateOnVisibleHemisphere(
-  coordinates: [number, number],
-  rotation: [number, number, number],
-) {
-  const [longitude, latitude] = coordinates;
-  const centerLongitude = -rotation[0];
-  const centerLatitude = -rotation[1];
-  const longitudeRadian = longitude * DEGREE_TO_RADIAN;
-  const latitudeRadian = latitude * DEGREE_TO_RADIAN;
-  const centerLongitudeRadian = centerLongitude * DEGREE_TO_RADIAN;
-  const centerLatitudeRadian = centerLatitude * DEGREE_TO_RADIAN;
-  const visibility =
-    Math.sin(latitudeRadian) * Math.sin(centerLatitudeRadian) +
-    Math.cos(latitudeRadian) *
-      Math.cos(centerLatitudeRadian) *
-      Math.cos(longitudeRadian - centerLongitudeRadian);
-
-  return visibility > VISIBLE_HEMISPHERE_THRESHOLD;
 }
 
 function subscribeToClientMount(onStoreChange: () => void) {
@@ -173,105 +153,40 @@ export function WorldMap({
     getServerMountSnapshot,
   );
   const { boundaries, status: adminBoundaryStatus } = useAdminBoundaries(selectedCountryCode);
-  const [scale, setScale] = useState(DEFAULT_SCALE);
-  const [rotation, setRotation] = useState<[number, number, number]>([0, -15, 0]);
-  const [isDragging, setIsDragging] = useState(false);
+  const [mapPosition, setMapPosition] = useState<MapPosition>({
+    center: DEFAULT_CENTER,
+    zoom: DEFAULT_ZOOM,
+  });
   const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
   const [selectedCountryLabel, setSelectedCountryLabel] = useState<string | null>(null);
   const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
   const [selectedCountryCoordinates, setSelectedCountryCoordinates] = useState<[number, number] | null>(null);
-  const [mapMode, setMapMode] = useState<MapMode>("globe");
-  const scaleRef = useRef(DEFAULT_SCALE);
-  const rotationRef = useRef<[number, number, number]>([0, -15, 0]);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const focusAnimationRef = useRef<number | null>(null);
+  const [mapMode, setMapMode] = useState<MapMode>("world");
   const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
   const isRegionalMode = mapMode === "regional" && Boolean(selectedCountryCode && selectedCountryName);
-  const canShowDetailButton = mapMode === "globe" && adminBoundaryStatus === "success";
+  const canShowDetailButton = mapMode === "world" && adminBoundaryStatus === "success";
   const isImmersive = variant === "immersive";
 
-  const cancelFocusAnimation = useCallback(() => {
-    if (focusAnimationRef.current === null) {
-      return;
-    }
-
-    window.cancelAnimationFrame(focusAnimationRef.current);
-    focusAnimationRef.current = null;
+  const applyZoomDelta = useCallback((delta: number) => {
+    setMapPosition((currentPosition) => ({
+      ...currentPosition,
+      zoom: clampZoom(currentPosition.zoom + delta),
+    }));
   }, []);
 
-  const applyScaleDelta = useCallback((delta: number) => {
-    setScale((currentScale) => {
-      const nextScale = clampScale(currentScale + delta);
-
-      scaleRef.current = nextScale;
-
-      return nextScale;
+  const focusCoordinates = useCallback((coordinates: [number, number], targetZoom: number) => {
+    setMapPosition({
+      center: normalizeCenter(coordinates),
+      zoom: clampZoom(targetZoom),
     });
   }, []);
 
-  const focusCoordinates = useCallback(
-    (coordinates: [number, number], targetScale: number) => {
-      cancelFocusAnimation();
-
-      const [longitude, latitude] = coordinates;
-      const fromRotation = rotationRef.current;
-      const targetRotation: [number, number, number] = [
-        -longitude,
-        clampLatitude(-latitude),
-        fromRotation[2],
-      ];
-      const fromScale = scaleRef.current;
-      const nextScale = Math.max(targetScale, fromScale);
-      const startedAt = window.performance.now();
-      const longitudeDelta = getShortestAngleDelta(fromRotation[0], targetRotation[0]);
-      const latitudeDelta = targetRotation[1] - fromRotation[1];
-
-      function animate(now: number) {
-        const progress = Math.min((now - startedAt) / FOCUS_ANIMATION_DURATION, 1);
-        const easedProgress = easeOutCubic(progress);
-        const nextRotation: [number, number, number] = [
-          fromRotation[0] + longitudeDelta * easedProgress,
-          fromRotation[1] + latitudeDelta * easedProgress,
-          fromRotation[2],
-        ];
-        const animatedScale = fromScale + (nextScale - fromScale) * easedProgress;
-
-        rotationRef.current = nextRotation;
-        scaleRef.current = animatedScale;
-        setRotation(nextRotation);
-        setScale(animatedScale);
-
-        if (progress < 1) {
-          focusAnimationRef.current = window.requestAnimationFrame(animate);
-          return;
-        }
-
-        focusAnimationRef.current = null;
-      }
-
-      focusAnimationRef.current = window.requestAnimationFrame(animate);
-    },
-    [cancelFocusAnimation],
-  );
-
   const focusCountry = useCallback(
     (centroid: [number, number], countryCode: string) => {
-      focusCoordinates(centroid, getFocusedScale(countryCode));
+      focusCoordinates(centroid, getFocusedZoom(countryCode));
     },
     [focusCoordinates],
   );
-
-  useEffect(() => {
-    return cancelFocusAnimation;
-  }, [cancelFocusAnimation]);
-
-  useEffect(() => {
-    scaleRef.current = scale;
-  }, [scale]);
-
-  useEffect(() => {
-    rotationRef.current = rotation;
-  }, [rotation]);
 
   useEffect(() => {
     if (!selectedCountryCode || !selectedCountryName || !selectedCountryCoordinatesFromProps) {
@@ -279,7 +194,7 @@ export function WorldMap({
     }
 
     const focusFrame = window.requestAnimationFrame(() => {
-      setMapMode("globe");
+      setMapMode("world");
       focusCountry(selectedCountryCoordinatesFromProps, selectedCountryCode);
     });
 
@@ -287,64 +202,26 @@ export function WorldMap({
   }, [focusCountry, selectedCountryCode, selectedCountryCoordinatesFromProps, selectedCountryName]);
 
   function handleZoomIn() {
-    cancelFocusAnimation();
-    applyScaleDelta(ZOOM_STEP);
+    applyZoomDelta(ZOOM_STEP);
   }
 
   function handleZoomOut() {
-    cancelFocusAnimation();
-    applyScaleDelta(-ZOOM_STEP);
+    applyZoomDelta(-ZOOM_STEP);
   }
 
   function handleResetView() {
-    cancelFocusAnimation();
-    setMapMode("globe");
-    scaleRef.current = DEFAULT_SCALE;
-    rotationRef.current = [0, -15, 0];
-    setScale(DEFAULT_SCALE);
-    setRotation([0, -15, 0]);
+    setMapMode("world");
+    setMapPosition({
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+    });
   }
 
-  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
-    if (isRegionalMode) {
-      return;
-    }
-
-    cancelFocusAnimation();
-    setIsDragging(true);
-    dragStartRef.current = { x: event.clientX, y: event.clientY };
-  }
-
-  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    if (isRegionalMode || !dragStartRef.current) {
-      return;
-    }
-
-    const deltaX = event.clientX - dragStartRef.current.x;
-    const deltaY = event.clientY - dragStartRef.current.y;
-
-    setRotation(([longitude, latitude, gamma]) => [
-      longitude + deltaX * DRAG_LONGITUDE_SENSITIVITY,
-      clampLatitude(latitude - deltaY * DRAG_LATITUDE_SENSITIVITY),
-      gamma,
-    ]);
-
-    dragStartRef.current = { x: event.clientX, y: event.clientY };
-  }
-
-  function handlePointerUp() {
-    setIsDragging(false);
-    dragStartRef.current = null;
-  }
-
-  function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
-    if (isRegionalMode) {
-      return;
-    }
-
-    event.preventDefault();
-    cancelFocusAnimation();
-    applyScaleDelta(event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
+  function handleMoveEnd(position: ZoomableGroupMoveEnd) {
+    setMapPosition({
+      center: normalizeCenter(position.coordinates),
+      zoom: clampZoom(position.zoom),
+    });
   }
 
   function handleSelectRegion(region: SelectedRegion) {
@@ -354,7 +231,7 @@ export function WorldMap({
   }
 
   function handleSelectCountryFromMap(countryName: string, countryCode: string, centroid: [number, number]) {
-    setMapMode("globe");
+    setMapMode("world");
     setSelectedCountryLabel(countryName);
     setSelectedMarkerCoordinates(centroid);
     setSelectedCountryCoordinates(centroid);
@@ -363,7 +240,7 @@ export function WorldMap({
   }
 
   function handleSelectWeatherOverlayPoint(point: WeatherOverlayPoint) {
-    setMapMode("globe");
+    setMapMode("world");
     setSelectedCountryLabel(point.countryName);
     setSelectedMarkerCoordinates([point.longitude, point.latitude]);
     setSelectedCountryCoordinates([point.longitude, point.latitude]);
@@ -402,16 +279,17 @@ export function WorldMap({
       return;
     }
 
-    cancelFocusAnimation();
     setMapMode("regional");
     setSelectedCountryLabel(selectedCountryName);
     setSelectedMarkerCoordinates(null);
   }
 
-  function handleReturnToGlobe() {
-    cancelFocusAnimation();
-    setMapMode("globe");
-    setScale(FOCUSED_SCALE);
+  function handleReturnToWorldMap() {
+    setMapMode("world");
+    setMapPosition((currentPosition) => ({
+      ...currentPosition,
+      zoom: Math.max(currentPosition.zoom, FOCUSED_ZOOM),
+    }));
 
     if (selectedCountryCode && selectedCountryName) {
       setSelectedCountryLabel(selectedCountryName);
@@ -430,10 +308,7 @@ export function WorldMap({
   const visibleSelectedMarkerCoordinates = selectedRegionCode
     ? selectedMarkerCoordinates
     : selectedCountryCoordinatesFromProps ?? selectedMarkerCoordinates;
-  const canShowSelectedMarker =
-    visibleSelectedMarkerCoordinates !== null &&
-    (isRegionalMode ||
-      isCoordinateOnVisibleHemisphere(visibleSelectedMarkerCoordinates, rotation));
+  const canShowSelectedMarker = visibleSelectedMarkerCoordinates !== null;
 
   return (
     <div
@@ -445,27 +320,20 @@ export function WorldMap({
       data-weather-layer={activeLayerId}
     >
       {!isImmersive ? (
-      <div className="flex h-12 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950">
-        <p className="min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
-          {hoveredCountryName ?? visibleSelectedLabel ?? "Select a country on the globe"}
-        </p>
-        <span className="hidden rounded-md border border-slate-200 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:border-slate-800 dark:text-slate-400 sm:inline">
-          {isRegionalMode ? "Regional Detail" : "Interactive Globe"}
-        </span>
-      </div>
+        <div className="flex h-12 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950">
+          <p className="min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+            {hoveredCountryName ?? visibleSelectedLabel ?? "지도에서 국가를 선택하세요"}
+          </p>
+          <span className="hidden rounded-md border border-slate-200 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:border-slate-800 dark:text-slate-400 sm:inline">
+            {isRegionalMode ? "Regional Detail" : "Live Weather Map"}
+          </span>
+        </div>
       ) : null}
 
       <div
         className={`weather-map-stage relative w-full min-w-0 overflow-hidden ${
           isImmersive ? "h-full min-h-[720px] max-h-none" : "h-[56vh] min-h-[320px] max-h-[620px]"
-        } ${
-          isRegionalMode ? "cursor-default" : isDragging ? "cursor-grabbing" : "cursor-grab"
-        }`}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onWheel={handleWheel}
+        } ${isRegionalMode ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
       >
         <div className="weather-map-aurora" aria-hidden="true" />
         <div className="weather-map-grid" aria-hidden="true" />
@@ -480,145 +348,132 @@ export function WorldMap({
             selectedMarkerCoordinates={selectedRegionCode ? selectedMarkerCoordinates : null}
             statusLabel={adminBoundaryStatusLabel}
             onSelectRegion={handleSelectRegion}
-            onReturnToGlobe={handleReturnToGlobe}
+            onReturnToWorldMap={handleReturnToWorldMap}
           />
         ) : hasMounted ? (
           <ComposableMap
-            projection="geoOrthographic"
-            projectionConfig={{ scale, rotate: rotation }}
-            className="relative z-10 h-full w-full min-w-0 max-w-full drop-shadow-[0_22px_28px_rgba(15,23,42,0.24)]"
-            aria-label="World map"
+            projection="geoMercator"
+            projectionConfig={{ scale: 140 }}
+            className="relative z-10 h-full w-full min-w-0 max-w-full drop-shadow-[0_16px_18px_rgba(15,23,42,0.16)]"
+            aria-label="Live weather world map"
           >
             <defs>
-              <radialGradient id="globeOceanGradient" cx="38%" cy="30%" r="68%">
-                <stop offset="0%" stopColor="#e6eef4" />
-                <stop offset="42%" stopColor="#8eb6c8" />
-                <stop offset="78%" stopColor="#28677d" />
-                <stop offset="100%" stopColor="#0f3d52" />
-              </radialGradient>
-              <radialGradient id="globeShadeGradient" cx="34%" cy="26%" r="74%">
-                <stop offset="0%" stopColor="rgba(255,255,255,0.46)" />
-                <stop offset="58%" stopColor="rgba(255,255,255,0)" />
-                <stop offset="100%" stopColor="rgba(15,23,42,0.42)" />
-              </radialGradient>
+              <linearGradient id="mapOceanWash" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgba(226, 246, 255, 0.46)" />
+                <stop offset="52%" stopColor="rgba(255, 255, 255, 0.18)" />
+                <stop offset="100%" stopColor="rgba(8, 145, 178, 0.18)" />
+              </linearGradient>
             </defs>
+            <rect width="800" height="600" fill="url(#mapOceanWash)" />
 
-            <Sphere
-              id="globe-ocean"
-              fill="url(#globeOceanGradient)"
-              stroke="rgba(226,232,240,0.84)"
-              strokeWidth={0.8}
-            />
-            <Graticule stroke="rgba(248,250,252,0.28)" strokeWidth={0.35} />
+            <ZoomableGroup
+              center={mapPosition.center}
+              zoom={mapPosition.zoom}
+              minZoom={MIN_ZOOM}
+              maxZoom={MAX_ZOOM}
+              onMoveEnd={handleMoveEnd}
+            >
+              <Graticule stroke="rgba(15,23,42,0.12)" strokeWidth={0.45} />
 
-            <Geographies geography={WORLD_GEO_URL}>
-              {({ geographies }) =>
-                geographies.map((geography, index) => {
-                  const feature = geography as GeographyFeature;
-                  const countryName = feature.properties.name ?? feature.properties.NAME ?? "Unknown";
-                  const countryCode = getCountryCode(feature, countryName);
-                  const isSelected = selectedCountryCode === countryCode;
-                  const centroid = geoCentroid(feature as never) as [number, number];
-                  const defaultFill = LAND_COLORS[index % LAND_COLORS.length];
+              <Geographies geography={WORLD_GEO_URL}>
+                {({ geographies }) =>
+                  geographies.map((geography, index) => {
+                    const feature = geography as GeographyFeature;
+                    const countryName = feature.properties.name ?? feature.properties.NAME ?? "Unknown";
+                    const countryCode = getCountryCode(feature, countryName);
+                    const isSelected = selectedCountryCode === countryCode;
+                    const centroid = geoCentroid(feature as never) as [number, number];
+                    const defaultFill = LAND_COLORS[index % LAND_COLORS.length];
 
-                  return (
-                    <Geography
-                      key={feature.rsmKey}
-                      geography={geography}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Select ${countryName}`}
-                      onMouseEnter={() => setHoveredCountryName(countryName)}
-                      onMouseLeave={() => setHoveredCountryName(null)}
-                      onClick={() => handleSelectCountryFromMap(countryName, countryCode, centroid)}
-                      onKeyDown={(event) => handleCountryKeyDown(event, countryName, countryCode, centroid)}
-                      className={`transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
-                        isSelected ? "pointer-events-none" : "cursor-pointer"
-                      }`}
-                      style={{
-                        default: {
-                          fill: isSelected ? "rgba(245, 158, 11, 0.18)" : defaultFill,
-                          stroke: isSelected ? "#111827" : "rgba(17, 24, 39, 0.56)",
-                          strokeWidth: isSelected ? 1.8 : 0.75,
-                        },
-                        hover: {
-                          fill: "#d9b46f",
-                          stroke: "#0f172a",
-                          strokeWidth: 1.1,
-                        },
-                        pressed: {
-                          fill: "#b45309",
-                          stroke: "#0f172a",
-                          strokeWidth: 1.2,
-                        },
-                      }}
-                    />
-                  );
-                })
-              }
-            </Geographies>
+                    return (
+                      <Geography
+                        key={feature.rsmKey}
+                        geography={geography}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Select ${countryName}`}
+                        onMouseEnter={() => setHoveredCountryName(countryName)}
+                        onMouseLeave={() => setHoveredCountryName(null)}
+                        onClick={() => handleSelectCountryFromMap(countryName, countryCode, centroid)}
+                        onKeyDown={(event) => handleCountryKeyDown(event, countryName, countryCode, centroid)}
+                        className={`transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
+                          isSelected ? "pointer-events-none" : "cursor-pointer"
+                        }`}
+                        style={{
+                          default: {
+                            fill: isSelected ? "rgba(245, 158, 11, 0.26)" : defaultFill,
+                            stroke: isSelected ? "#111827" : "rgba(17, 24, 39, 0.46)",
+                            strokeWidth: isSelected ? 1.4 : 0.55,
+                          },
+                          hover: {
+                            fill: "#d9b46f",
+                            stroke: "#0f172a",
+                            strokeWidth: 0.9,
+                          },
+                          pressed: {
+                            fill: "#b45309",
+                            stroke: "#0f172a",
+                            strokeWidth: 1,
+                          },
+                        }}
+                      />
+                    );
+                  })
+                }
+              </Geographies>
 
-            <Sphere
-              id="globe-shade"
-              fill="url(#globeShadeGradient)"
-              stroke="rgba(255,255,255,0.22)"
-              strokeWidth={0.8}
-              className="pointer-events-none"
-            />
-
-            {isWeatherOverlayVisible
-              ? weatherOverlayPoints
-                  .filter((point) => isCoordinateOnVisibleHemisphere([point.longitude, point.latitude], rotation))
-                  .map((point) => (
+              {isWeatherOverlayVisible
+                ? weatherOverlayPoints.map((point) => (
                     <WeatherOverlayMarker key={point.id} point={point} onSelectPoint={handleSelectWeatherOverlayPoint} />
                   ))
-              : null}
+                : null}
 
-            {canShowSelectedMarker && visibleSelectedMarkerCoordinates && selectedWeatherCondition ? (
-              <WeatherConditionMarker condition={selectedWeatherCondition} coordinates={visibleSelectedMarkerCoordinates} />
-            ) : null}
+              {canShowSelectedMarker && visibleSelectedMarkerCoordinates && selectedWeatherCondition ? (
+                <WeatherConditionMarker condition={selectedWeatherCondition} coordinates={visibleSelectedMarkerCoordinates} />
+              ) : null}
 
-            {selectedCountryCode && canShowSelectedMarker && visibleSelectedMarkerCoordinates ? (
-              <Marker coordinates={visibleSelectedMarkerCoordinates}>
-                <g className="weather-country-popout-anchor" style={{ pointerEvents: "all" }}>
-                  <line x1="0" y1="-6" x2="0" y2="-36" className="weather-country-popout-line pointer-events-none" />
-                  <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot pointer-events-none" />
-                  <foreignObject
-                    x="-122"
-                    y="-98"
-                    width="244"
-                    height="66"
-                    className="overflow-visible"
-                    style={{ pointerEvents: "all" }}
-                  >
-                    <div
-                      className="weather-country-popout"
-                      onMouseDown={(event) => event.stopPropagation()}
-                      onPointerDown={(event) => event.stopPropagation()}
-                      onClick={canShowDetailButton ? handleOpenRegionalDetail : undefined}
+              {selectedCountryCode && canShowSelectedMarker && visibleSelectedMarkerCoordinates ? (
+                <Marker coordinates={visibleSelectedMarkerCoordinates}>
+                  <g className="weather-country-popout-anchor" style={{ pointerEvents: "all" }}>
+                    <line x1="0" y1="-6" x2="0" y2="-36" className="weather-country-popout-line pointer-events-none" />
+                    <circle cx="0" cy="-4" r="3.2" className="weather-country-popout-dot pointer-events-none" />
+                    <foreignObject
+                      x="-122"
+                      y="-98"
+                      width="244"
+                      height="66"
+                      className="overflow-visible"
+                      style={{ pointerEvents: "all" }}
                     >
-                      <span>{visibleSelectedLabel}</span>
-                      {canShowDetailButton ? (
-                        <button
-                          type="button"
-                          onMouseDown={(event) => event.stopPropagation()}
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onClick={handleOpenRegionalDetail}
-                          className="weather-country-detail-button"
-                          aria-label={`${visibleSelectedLabel} regional detail`}
-                        >
-                          Detail
-                        </button>
-                      ) : null}
-                    </div>
-                  </foreignObject>
-                </g>
-              </Marker>
-            ) : null}
+                      <div
+                        className="weather-country-popout"
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={canShowDetailButton ? handleOpenRegionalDetail : undefined}
+                      >
+                        <span>{visibleSelectedLabel}</span>
+                        {canShowDetailButton ? (
+                          <button
+                            type="button"
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={handleOpenRegionalDetail}
+                            className="weather-country-detail-button"
+                            aria-label={`${visibleSelectedLabel} 지역 상세 보기`}
+                          >
+                            Detail
+                          </button>
+                        ) : null}
+                      </div>
+                    </foreignObject>
+                  </g>
+                </Marker>
+              ) : null}
+            </ZoomableGroup>
           </ComposableMap>
         ) : (
           <div aria-hidden="true" className="relative z-10 h-full w-full">
-            <div className="absolute left-1/2 top-1/2 h-[min(72vw,480px)] w-[min(72vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200 bg-[radial-gradient(circle_at_38%_30%,#e6eef4_0%,#8eb6c8_42%,#28677d_78%,#0f3d52_100%)] shadow-[0_22px_28px_rgba(15,23,42,0.24)] dark:border-slate-700" />
+            <div className="absolute inset-10 rounded-md border border-slate-200 bg-white/30 shadow-[0_16px_18px_rgba(15,23,42,0.12)] dark:border-slate-700 dark:bg-slate-900/30" />
           </div>
         )}
 
@@ -628,7 +483,7 @@ export function WorldMap({
               type="button"
               onClick={onToggleWeatherOverlay}
               aria-pressed={isWeatherOverlayVisible}
-              aria-label={isWeatherOverlayVisible ? "Hide globe weather overlay" : "Show globe weather overlay"}
+              aria-label={isWeatherOverlayVisible ? "날씨 오버레이 숨기기" : "날씨 오버레이 보이기"}
               className={`inline-flex h-10 items-center justify-center rounded-md border px-3 text-xs font-semibold shadow-sm backdrop-blur transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
                 isWeatherOverlayVisible
                   ? "border-cyan-500/70 bg-cyan-950/88 text-cyan-50 hover:bg-cyan-900 dark:border-cyan-300/50 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
@@ -649,7 +504,7 @@ export function WorldMap({
             <button
               type="button"
               onClick={handleZoomIn}
-              aria-label="Zoom in"
+              aria-label="지도 확대"
               className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 font-mono text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
             >
               +
@@ -657,7 +512,7 @@ export function WorldMap({
             <button
               type="button"
               onClick={handleZoomOut}
-              aria-label="Zoom out"
+              aria-label="지도 축소"
               className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 font-mono text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
             >
               -
@@ -665,7 +520,7 @@ export function WorldMap({
             <button
               type="button"
               onClick={handleResetView}
-              aria-label="Reset map view"
+              aria-label="지도 초기화"
               className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
             >
               Reset
@@ -692,26 +547,26 @@ export function WorldMap({
       </div>
 
       {!isImmersive ? (
-      <div className="flex flex-col gap-1 border-t border-slate-200 px-4 py-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          {isRegionalMode
-            ? "Select a region for local weather, or return to the globe."
-            : "Drag to rotate, use +/- or wheel to zoom, and click a country for details."}
-        </p>
-        {selectedCountryCode ? (
+        <div className="flex flex-col gap-1 border-t border-slate-200 px-4 py-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            Regional data:{" "}
-            <a
-              href="https://www.geoboundaries.org/"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-cyan-700 underline-offset-2 hover:underline dark:text-cyan-200"
-            >
-              geoBoundaries gbOpen
-            </a>
+            {isRegionalMode
+              ? "지역을 선택해 세부 날씨를 보거나 세계지도로 돌아갈 수 있습니다."
+              : "드래그로 지도를 이동하고, 휠 또는 +/- 버튼으로 확대/축소할 수 있습니다."}
           </p>
-        ) : null}
-      </div>
+          {selectedCountryCode ? (
+            <p>
+              Regional data:{" "}
+              <a
+                href="https://www.geoboundaries.org/"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-cyan-700 underline-offset-2 hover:underline dark:text-cyan-200"
+              >
+                geoBoundaries gbOpen
+              </a>
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

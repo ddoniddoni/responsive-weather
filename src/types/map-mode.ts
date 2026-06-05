@@ -1,1 +1,1 @@
-export type MapMode = "globe" | "regional";
+export type MapMode = "world" | "regional";

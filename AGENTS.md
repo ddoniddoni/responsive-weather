@@ -800,17 +800,17 @@ feat(map): 국가 선택 인터랙션 추가
 ```
 ---
 
-## 34. Realtime Globe Weather Overlay Exception
+## 34. Realtime Weather Map Overlay Exception
 
-The product requirements now include an explicit realtime globe weather overlay mode.
+제품 방향은 지구본이 아니라 Windy와 유사한 평면 날씨 지도다.
 
-The original rule that map components should not directly display weather data still applies to the default MVP selection mode. However, when a Step and PRD section explicitly target the realtime overlay experience, map components may render compact weather markers or lightweight weather layers on the globe.
+기본 지도 컴포넌트는 국가와 지역 선택에 집중하되, Step과 PRD가 실시간 오버레이 경험을 명시하는 경우 평면 세계지도 위에 compact 날씨 마커 또는 가벼운 날씨 레이어를 표시할 수 있다.
 
-Overlay work must follow these boundaries:
+오버레이 작업은 다음 경계를 지킨다.
 
-- The overlay must be optional and controlled by a visible toggle.
-- Detailed weather information must remain in the weather panel or mobile sheet.
-- The overlay must use normalized app data, not raw API responses.
-- The first provider choice is Open-Meteo unless the user asks otherwise.
-- The implementation must avoid continuous requests for every country or region.
-- Accessibility, loading, error, empty, and mobile states are required.
+- 오버레이는 사용자가 볼 수 있는 토글로 제어한다.
+- 상세 날씨 정보는 날씨 패널 또는 모바일 시트에 유지한다.
+- 오버레이는 raw API 응답이 아니라 정규화된 앱 데이터를 사용한다.
+- 첫 번째 provider는 사용자가 다르게 요청하지 않는 한 Open-Meteo를 사용한다.
+- 모든 국가 또는 지역에 대해 지속적으로 요청하지 않는다.
+- 접근성, 로딩, 에러, 빈 상태, 모바일 상태를 고려한다.

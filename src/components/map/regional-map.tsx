@@ -18,7 +18,7 @@ type RegionalMapProps = {
   selectedMarkerCoordinates: [number, number] | null;
   statusLabel: string | null;
   onSelectRegion: (region: SelectedRegion) => void;
-  onReturnToGlobe: () => void;
+  onReturnToWorldMap: () => void;
 };
 
 type FitExtentObject = Parameters<ReturnType<typeof geoMercator>["fitExtent"]>[1];
@@ -121,7 +121,7 @@ export function RegionalMap({
   selectedMarkerCoordinates,
   statusLabel,
   onSelectRegion,
-  onReturnToGlobe,
+  onReturnToWorldMap,
 }: RegionalMapProps) {
   const renderableBoundaries = useMemo(() => getRenderableBoundaries(boundaries), [boundaries]);
   const { path, projectPoint } = useMemo(() => {
@@ -213,11 +213,11 @@ export function RegionalMap({
       <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={onReturnToGlobe}
-          aria-label="Return to globe map"
+          onClick={onReturnToWorldMap}
+          aria-label="세계지도 보기"
           className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/86 dark:text-slate-100 dark:hover:bg-slate-900"
         >
-          Globe
+          Map
         </button>
         <span className="rounded-md border border-slate-200 bg-white/86 px-3 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-100">
           Regional mode

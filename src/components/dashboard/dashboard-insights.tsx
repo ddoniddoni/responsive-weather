@@ -17,7 +17,7 @@ export function DashboardInsights({ weather }: DashboardInsightsProps) {
       value: selectedLocationName,
       helperText: weather
         ? `${weather.temperature}°C, ${weather.condition}, humidity ${weather.humidity}%.`
-        : "Select a country on the globe to populate the weather panel.",
+        : "Select a country on the map to populate the weather panel.",
     },
     {
       label: "Next",
