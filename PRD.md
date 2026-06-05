@@ -374,3 +374,91 @@ Responsive Weather는 단순한 날씨 정보 앱이 아니다.
 3. 날씨 상태가 UI에 자연스럽게 반영되는가?
 4. 반응형 환경에서도 사용하기 편한가?
 5. 추후 기능 확장이 쉬운 구조인가?
+---
+
+## 16. Realtime Globe Weather Overlay
+
+Responsive Weather now supports a product direction where the globe can show realtime weather signals directly on the map.
+
+This is an explicit extension of the original MVP rule. The default MVP map still focuses on country and region selection, but a separate overlay mode may display weather markers or lightweight visual layers on the globe when the user enables it.
+
+### 16.1 Overlay Goal
+
+- Let users scan global weather conditions directly from the globe.
+- Keep the selected-location weather panel as the detailed view.
+- Use map overlays for quick ambient signals, not full detailed forecasts.
+- Make the overlay optional so the globe can remain a clean selection surface.
+
+### 16.2 API Direction
+
+The first realtime implementation should use Open-Meteo.
+
+- Open-Meteo does not require an API key for the initial use case.
+- Requests should use representative latitude and longitude coordinates.
+- API responses must be normalized before UI usage.
+- Weather condition mapping must convert Open-Meteo weather codes into the app's `WeatherCondition` type.
+
+Initial request shape:
+
+```txt
+/v1/forecast
+?latitude={latitude}
+&longitude={longitude}
+&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code
+&timezone=auto
+```
+
+### 16.3 Data Flow
+
+```txt
+Representative weather points
+-> Open-Meteo current weather request
+-> normalizeWeather()
+-> WeatherOverlayPoint[]
+-> globe overlay markers or lightweight layers
+-> selected point/country opens the existing weather detail panel
+```
+
+### 16.4 Overlay Data Model
+
+```ts
+type WeatherOverlayPoint = {
+  id: string;
+  countryCode: string;
+  countryName: string;
+  label: string;
+  latitude: number;
+  longitude: number;
+  temperature: number;
+  condition: WeatherCondition;
+  updatedAt: string;
+};
+```
+
+### 16.5 UI Rules
+
+- The overlay must be controlled by a visible toggle.
+- The globe may show compact markers, temperature dots, or weather-condition colors.
+- The globe should not show large detailed weather cards over the map.
+- Detailed values remain in the weather panel or mobile sheet.
+- Marker visuals must not rely on color alone; labels, icons, aria labels, or tooltips should identify the condition.
+- Mobile layout must avoid dense overlays that block country selection.
+
+### 16.6 Performance Rules
+
+- Do not request realtime weather for every country continuously.
+- Start with a curated set of representative points.
+- Batch or throttle requests where possible.
+- Cache or reuse responses during the active session.
+- Refresh intervals must be conservative and user-friendly.
+- Loading, error, and empty overlay states must be visible without blocking map selection.
+
+### 16.7 Out of Scope for First Overlay Implementation
+
+- Radar tiles
+- Satellite imagery
+- Severe-weather alert polygons
+- Historical weather playback
+- Forecast animation timeline
+- User accounts or persisted favorite overlays
+- Paid API provider integration

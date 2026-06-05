@@ -10,9 +10,10 @@ import { WeatherScaleLegend } from "@/components/dashboard/weather-scale-legend"
 import { WorldMap } from "@/components/map/world-map";
 import { WeatherDetailPanel } from "@/components/weather/weather-detail-panel";
 import { SEARCHABLE_LOCATIONS, type SearchableLocation } from "@/constants/searchable-locations";
+import { WEATHER_OVERLAY_POINTS } from "@/constants/weather-overlay-points";
 import { FORECAST_TIMES, WEATHER_LAYERS } from "@/constants/weather-layers";
 import { getMockWeatherByCountry, getMockWeatherByRegion } from "@/lib/weather/mock-weather";
-import type { SelectedCountry, SelectedRegion } from "@/types/weather-data";
+import type { SelectedCountry, SelectedRegion, WeatherOverlayPoint } from "@/types/weather-data";
 
 export function WeatherDashboard() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -22,6 +23,7 @@ export function WeatherDashboard() {
   const [activeTime, setActiveTime] = useState(0);
   const [searchValue, setSearchValue] = useState("");
   const [isMobileWeatherOpen, setIsMobileWeatherOpen] = useState(false);
+  const [isWeatherOverlayVisible, setIsWeatherOverlayVisible] = useState(true);
   const isDark = theme === "dark";
 
   useEffect(() => {
@@ -63,6 +65,21 @@ export function WeatherDashboard() {
     });
   }
 
+  function handleSelectWeatherOverlayPoint(point: WeatherOverlayPoint) {
+    handleSelectCountry({
+      code: point.countryCode,
+      name: point.countryName,
+      coordinates: [point.longitude, point.latitude],
+    });
+  }
+
+  function handleClearWeatherSelection() {
+    setSelectedCountry(null);
+    setSelectedRegion(null);
+    setSearchValue("");
+    setIsMobileWeatherOpen(false);
+  }
+
   return (
     <div
       className={`relative h-screen min-h-[680px] max-w-full overflow-hidden transition-colors ${
@@ -76,9 +93,13 @@ export function WeatherDashboard() {
         selectedCountryCoordinates={selectedCountry?.coordinates ?? null}
         selectedRegionCode={selectedRegion?.regionCode ?? null}
         selectedWeatherCondition={weather?.condition ?? null}
+        weatherOverlayPoints={WEATHER_OVERLAY_POINTS}
+        isWeatherOverlayVisible={isWeatherOverlayVisible}
         variant="immersive"
         onSelectCountry={handleSelectCountry}
         onSelectRegion={handleSelectRegion}
+        onSelectWeatherOverlayPoint={handleSelectWeatherOverlayPoint}
+        onToggleWeatherOverlay={() => setIsWeatherOverlayVisible((isVisible) => !isVisible)}
       />
 
       <MapTopBar
@@ -103,9 +124,16 @@ export function WeatherDashboard() {
         onToggleOpen={() => setIsMobileWeatherOpen((isOpen) => !isOpen)}
       />
 
-      <div className="absolute bottom-24 left-3 z-20 hidden w-[calc(100vw-1.5rem)] min-w-0 md:bottom-24 md:left-auto md:right-4 md:block md:w-[390px]">
-        <WeatherDetailPanel weather={weather} theme={theme} variant="overlay" />
-      </div>
+      {weather ? (
+        <div className="absolute right-4 top-28 z-20 hidden w-[390px] max-w-[calc(100vw-2rem)] min-w-0 md:block">
+          <WeatherDetailPanel
+            weather={weather}
+            theme={theme}
+            variant="overlay"
+            onClose={handleClearWeatherSelection}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

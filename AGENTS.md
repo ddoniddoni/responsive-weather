@@ -798,3 +798,19 @@ feat(map): 국가 선택 인터랙션 추가
 지도에서 국가 클릭 시 선택 상태를 저장하고
 우측 날씨 패널이 열리도록 연결했다.
 ```
+---
+
+## 34. Realtime Globe Weather Overlay Exception
+
+The product requirements now include an explicit realtime globe weather overlay mode.
+
+The original rule that map components should not directly display weather data still applies to the default MVP selection mode. However, when a Step and PRD section explicitly target the realtime overlay experience, map components may render compact weather markers or lightweight weather layers on the globe.
+
+Overlay work must follow these boundaries:
+
+- The overlay must be optional and controlled by a visible toggle.
+- Detailed weather information must remain in the weather panel or mobile sheet.
+- The overlay must use normalized app data, not raw API responses.
+- The first provider choice is Open-Meteo unless the user asks otherwise.
+- The implementation must avoid continuous requests for every country or region.
+- Accessibility, loading, error, empty, and mobile states are required.

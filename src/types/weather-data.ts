@@ -28,3 +28,15 @@ export type SelectedRegion = {
   regionName: string;
   coordinates: [number, number];
 };
+
+export type WeatherOverlayPoint = {
+  id: string;
+  countryCode: string;
+  countryName: string;
+  label: string;
+  latitude: number;
+  longitude: number;
+  temperature: number;
+  condition: WeatherCondition;
+  updatedAt: string;
+};
