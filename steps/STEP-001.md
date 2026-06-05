@@ -1,23 +1,45 @@
-# STEP-001: 프로젝트 작업 방식 정비
+# STEP-001: Realtime weather overlay requirements
 
-## 목표
+## Goal
 
-Step 단위로 계획하고 완료 시점마다 push하는 작업 흐름을 프로젝트 규칙으로 확정한다.
+- Redefine the map experience so the globe can show realtime weather signals directly.
+- Keep the existing selected-location weather panel, but add an explicit weather overlay mode for the globe.
+- Define the API, data flow, UI boundaries, and completion criteria before implementation.
 
-## 작업 범위
+## Scope
 
-- `AGENTS.md`에 Step 기반 작업 규칙 추가
-- `AGENTS.md`에 Step 완료 후 push 규칙 추가
-- `AGENTS.md`에 커밋 메시지 형식/유형 규칙 추가
+- Update the product requirements to allow realtime weather markers or lightweight visual layers on the globe.
+- Keep Open-Meteo as the preferred weather API for the first realtime implementation.
+- Define representative weather points using country or city coordinates instead of fetching every country at once.
+- Normalize API responses before rendering them on the globe or in the weather panel.
+- Add loading, error, empty, and refresh-state requirements for overlay data.
+- Require a user-visible overlay toggle so the map can still be used as a clean selection surface.
 
-## 완료 기준
+## Out of Scope
 
-- 위 3가지 규칙이 `AGENTS.md`에 명시되어 있다.
-- 루트에 `steps/` 폴더가 존재한다.
-- 현재 Step 문서가 생성되어 있다.
+- Implementing the realtime overlay UI in this step.
+- Adding paid weather providers, API keys, authentication, database storage, or user accounts.
+- Rendering full radar tiles, satellite imagery, severe-alert polygons, or high-density forecast layers.
+- Polling every country or region continuously.
+- Changing the package manager or core Next.js, TypeScript, Tailwind CSS, and shadcn/ui stack.
 
-## 체크리스트
+## Completion Criteria
 
-- [x] `steps/` 폴더 생성
-- [x] `steps/STEP-001.md` 작성
-- [x] `AGENTS.md` 규칙 추가
+- `PRD.md` documents realtime globe weather overlay as a supported product direction.
+- `AGENTS.md` documents the overlay-mode exception to the previous no-weather-on-map rule.
+- `README.md` summarizes the realtime overlay direction for project readers.
+- Outdated pre-overlay Step documents are removed to keep the current product direction clear.
+- The first implementation target is clear: Open-Meteo current weather by representative coordinates.
+- The Step document defines boundaries that protect performance, accessibility, and API usage.
+- Documentation changes are reviewed with `git diff`.
+
+## Checklist
+
+- [x] Create Step 001 branch
+- [x] Add Step 001 plan
+- [x] Update PRD requirements
+- [x] Update AGENTS map rules
+- [x] Update README overview
+- [x] Remove outdated pre-overlay Step documents
+- [x] Review documentation diff
+- [x] Commit and push Step 001 branch
