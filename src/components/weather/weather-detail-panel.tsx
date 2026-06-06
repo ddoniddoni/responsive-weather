@@ -1,5 +1,5 @@
-import { WeatherMetricCard } from "@/components/weather/weather-metric-card";
 import { WeatherInsightStrip } from "@/components/weather/weather-insight-strip";
+import { WeatherMetricCard } from "@/components/weather/weather-metric-card";
 import { WeatherReactiveButton } from "@/components/weather/weather-reactive-button";
 import { getWeatherInsights } from "@/lib/weather/weather-insights";
 import type { WeatherData } from "@/types/weather-data";
@@ -10,6 +10,15 @@ type WeatherDetailPanelProps = {
   variant?: "panel" | "overlay";
   onClose?: () => void;
 };
+
+function formatUpdatedAt(updatedAt: string | undefined) {
+  const updatedDate = updatedAt ? new Date(updatedAt) : new Date();
+
+  return new Intl.DateTimeFormat("ko", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(Number.isNaN(updatedDate.getTime()) ? new Date() : updatedDate);
+}
 
 export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose }: WeatherDetailPanelProps) {
   const isOverlay = variant === "overlay";
@@ -23,9 +32,9 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
           Forecast Detail
         </p>
-        <h2 className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-100">지역 선택</h2>
+        <h2 className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-100">Select a location</h2>
         <p className="mt-3 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
-          지도에서 국가를 선택하면 기온, 바람, 습도, 날씨 상태를 이 패널에서 확인할 수 있습니다.
+          Select a country, region, or realtime marker to inspect temperature, wind, humidity, and condition details.
         </p>
       </aside>
     );
@@ -34,33 +43,29 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
   const title = weather.regionName ?? weather.countryName;
   const subtitle = weather.regionName ? `${weather.countryName} / ${weather.regionCode}` : weather.countryCode;
   const sourceLabel = weather.sourceLabel ?? "Weather data";
-  const updatedDate = weather.updatedAt ? new Date(weather.updatedAt) : new Date();
-  const updatedAt = new Intl.DateTimeFormat("ko", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(Number.isNaN(updatedDate.getTime()) ? new Date() : updatedDate);
+  const updatedAt = formatUpdatedAt(weather.updatedAt);
   const temperatureText = `${weather.temperature}\u00b0C`;
   const insights = getWeatherInsights(weather);
   const metricCards = [
     {
-      label: "기온",
+      label: "Temperature",
       value: temperatureText,
-      helperText: "현재 대기 온도",
+      helperText: "Current air temperature",
     },
     {
-      label: "체감",
+      label: "Feels like",
       value: `${weather.feelsLike}\u00b0C`,
-      helperText: "야외 체감 온도",
+      helperText: "Perceived outdoor temperature",
     },
     {
-      label: "습도",
+      label: "Humidity",
       value: `${weather.humidity}%`,
-      helperText: "공기 중 수분 비율",
+      helperText: "Moisture level in the air",
     },
     {
-      label: "바람",
+      label: "Wind",
       value: `${weather.windSpeed} m/s`,
-      helperText: "지표면 기준 풍속",
+      helperText: "Surface wind speed",
     },
   ];
 
@@ -86,7 +91,7 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
           {onClose ? (
             <button
               type="button"
-              aria-label="날씨 상세 패널 닫기"
+              aria-label="Close weather detail panel"
               onClick={onClose}
               className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white/86 text-lg font-semibold leading-none text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-slate-700 dark:bg-slate-900/82 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             >
@@ -106,7 +111,7 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">업데이트</p>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Updated</p>
             <p className="mt-1 font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">{updatedAt}</p>
           </div>
         </div>
