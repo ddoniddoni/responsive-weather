@@ -48,11 +48,13 @@ type WorldMapProps = {
   selectedWeatherCondition: WeatherCondition | null;
   weatherOverlayPoints?: WeatherOverlayPoint[];
   isWeatherOverlayVisible?: boolean;
+  isWeatherOverlayLoading?: boolean;
   weatherOverlayStatusLabel?: string | null;
   variant?: "panel" | "immersive";
   onSelectCountry: (country: SelectedCountry) => void;
   onSelectRegion: (region: SelectedRegion) => void;
   onSelectWeatherOverlayPoint?: (point: WeatherOverlayPoint) => void;
+  onRefreshWeatherOverlay?: () => void;
   onToggleWeatherOverlay?: () => void;
 };
 
@@ -140,11 +142,13 @@ export function WorldMap({
   selectedWeatherCondition,
   weatherOverlayPoints = [],
   isWeatherOverlayVisible = false,
+  isWeatherOverlayLoading = false,
   weatherOverlayStatusLabel = null,
   variant = "panel",
   onSelectCountry,
   onSelectRegion,
   onSelectWeatherOverlayPoint,
+  onRefreshWeatherOverlay,
   onToggleWeatherOverlay,
 }: WorldMapProps) {
   const hasMounted = useSyncExternalStore(
@@ -478,7 +482,7 @@ export function WorldMap({
         )}
 
         {!isRegionalMode && onToggleWeatherOverlay ? (
-          <div className={`absolute right-3 z-20 ${isImmersive ? "top-48 md:top-24" : "top-3"}`}>
+          <div className={`absolute right-3 z-20 flex flex-wrap justify-end gap-2 ${isImmersive ? "top-48 md:top-24" : "top-3"}`}>
             <button
               type="button"
               onClick={onToggleWeatherOverlay}
@@ -492,6 +496,17 @@ export function WorldMap({
             >
               Weather
             </button>
+            {onRefreshWeatherOverlay ? (
+              <button
+                type="button"
+                onClick={onRefreshWeatherOverlay}
+                disabled={isWeatherOverlayLoading}
+                aria-label="Refresh realtime weather overlay"
+                className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
+              >
+                {isWeatherOverlayLoading ? "Refreshing" : "Refresh"}
+              </button>
+            ) : null}
           </div>
         ) : null}
 

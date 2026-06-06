@@ -19,6 +19,8 @@ import type { SelectedCountry, SelectedRegion, WeatherOverlayPoint } from "@/typ
 type WeatherOverlayApiResponse = {
   data?: WeatherOverlayPoint[];
   error?: string;
+  source?: string;
+  updatedAt?: string;
 };
 
 type WeatherOverlayLoadStatus = "loading" | "success" | "error" | "empty";
@@ -36,6 +38,8 @@ export function WeatherDashboard() {
   const [weatherOverlayPoints, setWeatherOverlayPoints] = useState<WeatherOverlayPoint[]>(WEATHER_OVERLAY_POINTS);
   const [weatherOverlayLoadStatus, setWeatherOverlayLoadStatus] =
     useState<WeatherOverlayLoadStatus>("loading");
+  const [weatherOverlaySource, setWeatherOverlaySource] = useState("mock");
+  const [weatherOverlayUpdatedAt, setWeatherOverlayUpdatedAt] = useState<string | null>(null);
   const isDark = theme === "dark";
 
   useEffect(() => {
@@ -61,10 +65,19 @@ export function WeatherDashboard() {
 
         if (!payload.data || payload.data.length === 0) {
           setWeatherOverlayLoadStatus("empty");
+          setWeatherOverlaySource(payload.source ?? "open-meteo");
+          setWeatherOverlayUpdatedAt(payload.updatedAt ?? new Date().toISOString());
           return;
         }
 
         setWeatherOverlayPoints(payload.data);
+        setSelectedOverlayPoint((currentPoint) =>
+          currentPoint
+            ? payload.data?.find((point) => point.id === currentPoint.id) ?? currentPoint
+            : currentPoint,
+        );
+        setWeatherOverlaySource(payload.source ?? "open-meteo");
+        setWeatherOverlayUpdatedAt(payload.updatedAt ?? new Date().toISOString());
         setWeatherOverlayLoadStatus("success");
       } catch {
         if (abortController.signal.aborted) {
@@ -72,6 +85,8 @@ export function WeatherDashboard() {
         }
 
         setWeatherOverlayPoints(WEATHER_OVERLAY_POINTS);
+        setWeatherOverlaySource("mock");
+        setWeatherOverlayUpdatedAt(new Date().toISOString());
         setWeatherOverlayLoadStatus("error");
       }
     }
@@ -141,6 +156,48 @@ export function WeatherDashboard() {
     setIsMobileWeatherOpen(false);
   }
 
+  async function handleRefreshWeatherOverlay() {
+    setWeatherOverlayLoadStatus("loading");
+
+    try {
+      const response = await fetch("/api/weather-overlay");
+      const payload = (await response.json()) as WeatherOverlayApiResponse;
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Unable to refresh weather overlay data.");
+      }
+
+      if (!payload.data || payload.data.length === 0) {
+        setWeatherOverlayLoadStatus("empty");
+        setWeatherOverlaySource(payload.source ?? "open-meteo");
+        setWeatherOverlayUpdatedAt(payload.updatedAt ?? new Date().toISOString());
+        return;
+      }
+
+      setWeatherOverlayPoints(payload.data);
+      setSelectedOverlayPoint((currentPoint) =>
+        currentPoint
+          ? payload.data?.find((point) => point.id === currentPoint.id) ?? currentPoint
+          : currentPoint,
+      );
+      setWeatherOverlaySource(payload.source ?? "open-meteo");
+      setWeatherOverlayUpdatedAt(payload.updatedAt ?? new Date().toISOString());
+      setWeatherOverlayLoadStatus("success");
+    } catch {
+      setWeatherOverlayPoints(WEATHER_OVERLAY_POINTS);
+      setWeatherOverlaySource("mock");
+      setWeatherOverlayUpdatedAt(new Date().toISOString());
+      setWeatherOverlayLoadStatus("error");
+    }
+  }
+
+  const formattedWeatherOverlayUpdatedAt = weatherOverlayUpdatedAt
+    ? new Intl.DateTimeFormat("ko", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(weatherOverlayUpdatedAt))
+    : null;
+
   const weatherOverlayStatusLabel =
     isWeatherOverlayVisible && weatherOverlayLoadStatus === "loading"
       ? "실시간 날씨 불러오는 중"
@@ -149,6 +206,17 @@ export function WeatherDashboard() {
         : isWeatherOverlayVisible && weatherOverlayLoadStatus === "empty"
           ? "표시할 실시간 날씨 없음"
           : null;
+
+  const visibleWeatherOverlayStatusLabel =
+    isWeatherOverlayVisible && weatherOverlayLoadStatus === "loading"
+      ? "Refreshing realtime weather..."
+      : isWeatherOverlayVisible && weatherOverlayLoadStatus === "error"
+        ? "Realtime unavailable. Showing mock overlay."
+        : isWeatherOverlayVisible && weatherOverlayLoadStatus === "empty"
+          ? "No realtime overlay points available."
+          : isWeatherOverlayVisible && formattedWeatherOverlayUpdatedAt
+            ? `${weatherOverlaySource} updated ${formattedWeatherOverlayUpdatedAt}`
+            : weatherOverlayStatusLabel;
 
   return (
     <div
@@ -165,11 +233,13 @@ export function WeatherDashboard() {
         selectedWeatherCondition={weather?.condition ?? null}
         weatherOverlayPoints={weatherOverlayPoints}
         isWeatherOverlayVisible={isWeatherOverlayVisible}
-        weatherOverlayStatusLabel={weatherOverlayStatusLabel}
+        isWeatherOverlayLoading={weatherOverlayLoadStatus === "loading"}
+        weatherOverlayStatusLabel={visibleWeatherOverlayStatusLabel}
         variant="immersive"
         onSelectCountry={handleSelectCountry}
         onSelectRegion={handleSelectRegion}
         onSelectWeatherOverlayPoint={handleSelectWeatherOverlayPoint}
+        onRefreshWeatherOverlay={handleRefreshWeatherOverlay}
         onToggleWeatherOverlay={() => setIsWeatherOverlayVisible((isVisible) => !isVisible)}
       />
 
