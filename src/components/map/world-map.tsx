@@ -96,6 +96,11 @@ type WeatherHeatPoint = {
   radius: number;
 };
 
+type DeepLinkCamera = {
+  coordinates: [number, number];
+  zoom: number;
+};
+
 function getCountryCode(feature: GeographyFeature, countryName: string) {
   return (
     feature.properties.iso_a3 ??
@@ -152,6 +157,65 @@ function getUserLocationStatusLabel(status: UserLocationStatus) {
 
 function clampRatio(value: number) {
   return Math.max(0, Math.min(1, value));
+}
+
+function isFiniteCoordinate(value: number) {
+  return Number.isFinite(value);
+}
+
+function isValidLatitude(latitude: number) {
+  return isFiniteCoordinate(latitude) && latitude >= -90 && latitude <= 90;
+}
+
+function isValidLongitude(longitude: number) {
+  return isFiniteCoordinate(longitude) && longitude >= -180 && longitude <= 180;
+}
+
+function parseFiniteNumber(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+
+  return Number.isFinite(parsedValue) ? parsedValue : null;
+}
+
+function getDeepLinkCameraFromValues(latitude: number | null, longitude: number | null, zoom: number | null) {
+  if (latitude === null || longitude === null || !isValidLatitude(latitude) || !isValidLongitude(longitude)) {
+    return null;
+  }
+
+  return {
+    coordinates: [longitude, latitude] as [number, number],
+    zoom: clampZoom(zoom ?? USER_LOCATION_ZOOM),
+  };
+}
+
+function parseMapCameraFromSearch(search: string): DeepLinkCamera | null {
+  if (!search) {
+    return null;
+  }
+
+  const searchParams = new URLSearchParams(search);
+  const explicitCamera = getDeepLinkCameraFromValues(
+    parseFiniteNumber(searchParams.get("lat") ?? searchParams.get("latitude")),
+    parseFiniteNumber(searchParams.get("lon") ?? searchParams.get("lng") ?? searchParams.get("longitude")),
+    parseFiniteNumber(searchParams.get("zoom") ?? searchParams.get("z")),
+  );
+
+  if (explicitCamera) {
+    return explicitCamera;
+  }
+
+  const rawQuery = search.replace(/^\?/, "");
+  const [latitudeValue, longitudeValue, zoomValue] = rawQuery.split(",").map((value) => value.trim());
+
+  return getDeepLinkCameraFromValues(
+    parseFiniteNumber(latitudeValue),
+    parseFiniteNumber(longitudeValue),
+    parseFiniteNumber(zoomValue),
+  );
 }
 
 function normalizeLayerValue(value: number, min: number, max: number) {
@@ -339,6 +403,7 @@ export function WorldMap({
     getServerCompactViewportSnapshot,
   );
   const { boundaries, status: adminBoundaryStatus } = useAdminBoundaries(selectedCountryCode);
+  const hasAppliedDeepLinkCameraRef = useRef(false);
   const hasRequestedUserLocationRef = useRef(false);
   const [mapPosition, setMapPosition] = useState<MapPosition>({
     center: DEFAULT_CENTER,
@@ -418,7 +483,31 @@ export function WorldMap({
   }, [focusCountry, selectedCountryCode, selectedCountryCoordinatesFromProps, selectedCountryName]);
 
   useEffect(() => {
+    if (!hasMounted || hasAppliedDeepLinkCameraRef.current) {
+      return;
+    }
+
+    const deepLinkCamera = parseMapCameraFromSearch(window.location.search);
+
+    if (!deepLinkCamera) {
+      return;
+    }
+
+    hasAppliedDeepLinkCameraRef.current = true;
+    const focusFrame = window.requestAnimationFrame(() => {
+      setMapMode("world");
+      focusCoordinates(deepLinkCamera.coordinates, deepLinkCamera.zoom);
+    });
+
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [focusCoordinates, hasMounted]);
+
+  useEffect(() => {
     if (!hasMounted || hasRequestedUserLocationRef.current) {
+      return;
+    }
+
+    if (hasAppliedDeepLinkCameraRef.current) {
       return;
     }
 

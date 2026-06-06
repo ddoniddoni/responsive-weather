@@ -140,3 +140,9 @@ npm.cmd run build
 
 - Repeated heat spots and compact weather markers across the wrapped side map copies.
 - Kept wrapped marker copies visual-only so keyboard and click interaction stay on the primary map.
+
+## Step 016 Update
+
+- Added Windy-like map camera deep links such as `?37.482,127.139,5`.
+- Added explicit camera query support with `?lat=37.482&lon=127.139&zoom=5`.
+- Prevented automatic browser geolocation from overriding a valid URL camera.
