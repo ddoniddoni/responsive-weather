@@ -1,7 +1,7 @@
 "use client";
 
 import { geoCentroid } from "d3-geo";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
@@ -19,12 +19,14 @@ import type { SelectedCountry, SelectedRegion, WeatherOverlayPoint } from "@/typ
 
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const LAND_COLORS = ["#a7b0ba", "#b4bdc5", "#91a8b5", "#c0b29d", "#98afa2"];
-const DEFAULT_CENTER: [number, number] = [0, 18];
-const DEFAULT_ZOOM = 1;
-const MIN_ZOOM = 1;
+const DEFAULT_CENTER: [number, number] = [127.139, 37.482];
+const DEFAULT_ZOOM = 5;
+const MIN_ZOOM = 1.65;
 const MAX_ZOOM = 8;
 const FOCUSED_ZOOM = 2.8;
+const USER_LOCATION_ZOOM = 5.2;
 const ZOOM_STEP = 0.65;
+const WORLD_REPEAT_OFFSETS = [-880, 0, 880];
 const COMPACT_OVERLAY_ZOOM_THRESHOLD = 2.2;
 const MOBILE_VISIBLE_OVERLAY_COUNT = 4;
 
@@ -79,6 +81,8 @@ type MapPosition = {
   zoom: number;
 };
 
+type UserLocationStatus = "idle" | "locating" | "success" | "unsupported" | "denied" | "error";
+
 type ZoomableGroupMoveEnd = {
   coordinates: [number, number];
   zoom: number;
@@ -101,8 +105,12 @@ function clampZoom(zoom: number) {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
 }
 
+function wrapLongitude(longitude: number) {
+  return ((((longitude + 180) % 360) + 360) % 360) - 180;
+}
+
 function normalizeCenter([longitude, latitude]: [number, number]): [number, number] {
-  return [Math.max(-180, Math.min(180, longitude)), clampLatitude(latitude)];
+  return [wrapLongitude(longitude), clampLatitude(latitude)];
 }
 
 function getFocusedZoom(countryCode: string) {
@@ -116,6 +124,19 @@ function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
     success: null,
     error: "Regional boundaries could not be loaded.",
     unsupported: "Regional boundaries are not available for this location.",
+  };
+
+  return labelMap[status];
+}
+
+function getUserLocationStatusLabel(status: UserLocationStatus) {
+  const labelMap: Record<UserLocationStatus, string | null> = {
+    idle: null,
+    locating: "Locating your position...",
+    success: "Map focused on your location.",
+    unsupported: "Location is not supported in this browser.",
+    denied: "Location permission was denied.",
+    error: "Location could not be detected.",
   };
 
   return labelMap[status];
@@ -183,16 +204,19 @@ export function WorldMap({
     getServerCompactViewportSnapshot,
   );
   const { boundaries, status: adminBoundaryStatus } = useAdminBoundaries(selectedCountryCode);
+  const hasRequestedUserLocationRef = useRef(false);
   const [mapPosition, setMapPosition] = useState<MapPosition>({
     center: DEFAULT_CENTER,
     zoom: DEFAULT_ZOOM,
   });
+  const [userLocationStatus, setUserLocationStatus] = useState<UserLocationStatus>("idle");
   const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
   const [selectedCountryLabel, setSelectedCountryLabel] = useState<string | null>(null);
   const [selectedMarkerCoordinates, setSelectedMarkerCoordinates] = useState<[number, number] | null>(null);
   const [selectedCountryCoordinates, setSelectedCountryCoordinates] = useState<[number, number] | null>(null);
   const [mapMode, setMapMode] = useState<MapMode>("world");
   const adminBoundaryStatusLabel = getAdminBoundaryStatusLabel(adminBoundaryStatus);
+  const userLocationStatusLabel = getUserLocationStatusLabel(userLocationStatus);
   const isRegionalMode = mapMode === "regional" && Boolean(selectedCountryCode && selectedCountryName);
   const canShowDetailButton = mapMode === "world" && adminBoundaryStatus === "success";
   const isImmersive = variant === "immersive";
@@ -210,6 +234,33 @@ export function WorldMap({
       zoom: clampZoom(targetZoom),
     });
   }, []);
+
+  const requestUserLocation = useCallback(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setUserLocationStatus("unsupported");
+      return;
+    }
+
+    setUserLocationStatus("locating");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        focusCoordinates(
+          [position.coords.longitude, position.coords.latitude],
+          USER_LOCATION_ZOOM,
+        );
+        setMapMode("world");
+        setUserLocationStatus("success");
+      },
+      (error) => {
+        setUserLocationStatus(error.code === error.PERMISSION_DENIED ? "denied" : "error");
+      },
+      {
+        enableHighAccuracy: false,
+        maximumAge: 1000 * 60 * 10,
+        timeout: 8000,
+      },
+    );
+  }, [focusCoordinates]);
 
   const focusCountry = useCallback(
     (centroid: [number, number], countryCode: string) => {
@@ -230,6 +281,15 @@ export function WorldMap({
 
     return () => window.cancelAnimationFrame(focusFrame);
   }, [focusCountry, selectedCountryCode, selectedCountryCoordinatesFromProps, selectedCountryName]);
+
+  useEffect(() => {
+    if (!hasMounted || hasRequestedUserLocationRef.current) {
+      return;
+    }
+
+    hasRequestedUserLocationRef.current = true;
+    requestUserLocation();
+  }, [hasMounted, requestUserLocation]);
 
   function handleZoomIn() {
     applyZoomDelta(ZOOM_STEP);
@@ -415,54 +475,75 @@ export function WorldMap({
               maxZoom={MAX_ZOOM}
               onMoveEnd={handleMoveEnd}
             >
-              <Graticule stroke="rgba(15,23,42,0.12)" strokeWidth={0.45} />
+              {WORLD_REPEAT_OFFSETS.map((offsetX) => {
+                const isWrappedCopy = offsetX !== 0;
 
-              <Geographies geography={WORLD_GEO_URL}>
-                {({ geographies }) =>
-                  geographies.map((geography, index) => {
-                    const feature = geography as GeographyFeature;
-                    const countryName = feature.properties.name ?? feature.properties.NAME ?? "Unknown";
-                    const countryCode = getCountryCode(feature, countryName);
-                    const isSelected = selectedCountryCode === countryCode;
-                    const centroid = geoCentroid(feature as never) as [number, number];
-                    const defaultFill = LAND_COLORS[index % LAND_COLORS.length];
+                return (
+                  <g
+                    key={offsetX}
+                    transform={`translate(${offsetX} 0)`}
+                    aria-hidden={isWrappedCopy}
+                    style={{ pointerEvents: isWrappedCopy ? "none" : "auto" }}
+                  >
+                    <Graticule stroke="rgba(15,23,42,0.12)" strokeWidth={0.45} />
 
-                    return (
-                      <Geography
-                        key={feature.rsmKey}
-                        geography={geography}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Select ${countryName}`}
-                        onMouseEnter={() => setHoveredCountryName(countryName)}
-                        onMouseLeave={() => setHoveredCountryName(null)}
-                        onClick={() => handleSelectCountryFromMap(countryName, countryCode, centroid)}
-                        onKeyDown={(event) => handleCountryKeyDown(event, countryName, countryCode, centroid)}
-                        className={`transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
-                          isSelected ? "pointer-events-none" : "cursor-pointer"
-                        }`}
-                        style={{
-                          default: {
-                            fill: isSelected ? "rgba(245, 158, 11, 0.26)" : defaultFill,
-                            stroke: isSelected ? "#111827" : "rgba(17, 24, 39, 0.46)",
-                            strokeWidth: isSelected ? 1.4 : 0.55,
-                          },
-                          hover: {
-                            fill: "#d9b46f",
-                            stroke: "#0f172a",
-                            strokeWidth: 0.9,
-                          },
-                          pressed: {
-                            fill: "#b45309",
-                            stroke: "#0f172a",
-                            strokeWidth: 1,
-                          },
-                        }}
-                      />
-                    );
-                  })
-                }
-              </Geographies>
+                    <Geographies geography={WORLD_GEO_URL}>
+                      {({ geographies }) =>
+                        geographies.map((geography, index) => {
+                          const feature = geography as GeographyFeature;
+                          const countryName = feature.properties.name ?? feature.properties.NAME ?? "Unknown";
+                          const countryCode = getCountryCode(feature, countryName);
+                          const isSelected = !isWrappedCopy && selectedCountryCode === countryCode;
+                          const centroid = geoCentroid(feature as never) as [number, number];
+                          const defaultFill = LAND_COLORS[index % LAND_COLORS.length];
+
+                          return (
+                            <Geography
+                              key={`${offsetX}-${feature.rsmKey}`}
+                              geography={geography}
+                              role={isWrappedCopy ? undefined : "button"}
+                              tabIndex={isWrappedCopy ? undefined : 0}
+                              aria-label={isWrappedCopy ? undefined : `Select ${countryName}`}
+                              onMouseEnter={isWrappedCopy ? undefined : () => setHoveredCountryName(countryName)}
+                              onMouseLeave={isWrappedCopy ? undefined : () => setHoveredCountryName(null)}
+                              onClick={
+                                isWrappedCopy
+                                  ? undefined
+                                  : () => handleSelectCountryFromMap(countryName, countryCode, centroid)
+                              }
+                              onKeyDown={
+                                isWrappedCopy
+                                  ? undefined
+                                  : (event) => handleCountryKeyDown(event, countryName, countryCode, centroid)
+                              }
+                              className={`transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
+                                isSelected || isWrappedCopy ? "pointer-events-none" : "cursor-pointer"
+                              }`}
+                              style={{
+                                default: {
+                                  fill: isSelected ? "rgba(245, 158, 11, 0.26)" : defaultFill,
+                                  stroke: isSelected ? "#111827" : "rgba(17, 24, 39, 0.46)",
+                                  strokeWidth: isSelected ? 1.4 : 0.55,
+                                },
+                                hover: {
+                                  fill: isWrappedCopy ? defaultFill : "#d9b46f",
+                                  stroke: isWrappedCopy ? "rgba(17, 24, 39, 0.46)" : "#0f172a",
+                                  strokeWidth: isWrappedCopy ? 0.55 : 0.9,
+                                },
+                                pressed: {
+                                  fill: isWrappedCopy ? defaultFill : "#b45309",
+                                  stroke: isWrappedCopy ? "rgba(17, 24, 39, 0.46)" : "#0f172a",
+                                  strokeWidth: isWrappedCopy ? 0.55 : 1,
+                                },
+                              }}
+                            />
+                          );
+                        })
+                      }
+                    </Geographies>
+                  </g>
+                );
+              })}
 
               {isWeatherOverlayVisible
                 ? visibleWeatherOverlayPoints.map((point) => (
@@ -578,12 +659,29 @@ export function WorldMap({
             >
               Reset
             </button>
+            <button
+              type="button"
+              onClick={requestUserLocation}
+              disabled={userLocationStatus === "locating"}
+              aria-label="Focus map on my location"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
+            >
+              {userLocationStatus === "locating" ? "Locating" : "Locate"}
+            </button>
             {visibleWeatherOverlayStatusLabel ? (
               <div
                 role="status"
                 className="min-h-10 rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100"
               >
                 {visibleWeatherOverlayStatusLabel}
+              </div>
+            ) : null}
+            {userLocationStatusLabel ? (
+              <div
+                role="status"
+                className="min-h-10 rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100"
+              >
+                {userLocationStatusLabel}
               </div>
             ) : null}
           </div>

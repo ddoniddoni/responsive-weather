@@ -123,3 +123,9 @@ npm.cmd run build
 - Step 012에서 지도 컨트롤과 상태 메시지의 깨진 copy/aria label을 정리했습니다.
 - 일반 국가/지역 선택은 아직 mock 날씨 데이터를 fallback으로 사용합니다.
 - 인증, 저장 위치, 사용자 계정, 결제 기능은 없습니다.
+
+## Step 013 Update
+
+- Added user-location camera focus with a visible Locate control and status text.
+- Raised the minimum map zoom so the weather map does not collapse into a full-world overview.
+- Wrapped longitude values and rendered side world copies to make horizontal panning feel continuous.
