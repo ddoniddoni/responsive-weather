@@ -89,13 +89,41 @@ function normalizeOpenMeteoOverlayPoint(
   const temperature = isFiniteNumber(current?.temperature_2m)
     ? Math.round(current.temperature_2m)
     : basePoint.temperature;
+  const feelsLike = isFiniteNumber(current?.apparent_temperature)
+    ? Math.round(current.apparent_temperature)
+    : basePoint.feelsLike;
+  const humidity = isFiniteNumber(current?.relative_humidity_2m)
+    ? Math.round(current.relative_humidity_2m)
+    : basePoint.humidity;
+  const windSpeed = isFiniteNumber(current?.wind_speed_10m)
+    ? Number(current.wind_speed_10m.toFixed(1))
+    : basePoint.windSpeed;
+  const condition = normalizeOpenMeteoWeatherCode(current?.weather_code);
 
   return {
     ...basePoint,
     temperature,
-    condition: normalizeOpenMeteoWeatherCode(current?.weather_code),
+    feelsLike,
+    humidity,
+    windSpeed,
+    condition,
+    description: getOpenMeteoDescription(basePoint.label, condition),
     updatedAt: current?.time ?? new Date().toISOString(),
   };
+}
+
+function getOpenMeteoDescription(label: string, condition: WeatherCondition) {
+  const descriptionMap: Record<WeatherCondition, string> = {
+    sunny: `${label} is reporting clear realtime conditions from Open-Meteo.`,
+    rainy: `${label} is reporting wet realtime conditions from Open-Meteo.`,
+    cloudy: `${label} is reporting layered cloud cover from Open-Meteo.`,
+    snowy: `${label} is reporting wintry realtime conditions from Open-Meteo.`,
+    stormy: `${label} is reporting storm-prone realtime conditions from Open-Meteo.`,
+    foggy: `${label} is reporting reduced visibility conditions from Open-Meteo.`,
+    unknown: `${label} realtime weather is available, but the condition is not classified yet.`,
+  };
+
+  return descriptionMap[condition];
 }
 
 export async function getOpenMeteoWeatherOverlayPoints() {

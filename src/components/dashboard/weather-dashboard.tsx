@@ -13,6 +13,7 @@ import { SEARCHABLE_LOCATIONS, type SearchableLocation } from "@/constants/searc
 import { WEATHER_OVERLAY_POINTS } from "@/constants/weather-overlay-points";
 import { FORECAST_TIMES, WEATHER_LAYERS } from "@/constants/weather-layers";
 import { getMockWeatherByCountry, getMockWeatherByRegion } from "@/lib/weather/mock-weather";
+import { getWeatherFromOverlayPoint } from "@/lib/weather/overlay-weather";
 import type { SelectedCountry, SelectedRegion, WeatherOverlayPoint } from "@/types/weather-data";
 
 type WeatherOverlayApiResponse = {
@@ -26,6 +27,7 @@ export function WeatherDashboard() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<SelectedRegion | null>(null);
+  const [selectedOverlayPoint, setSelectedOverlayPoint] = useState<WeatherOverlayPoint | null>(null);
   const [activeLayer, setActiveLayer] = useState(WEATHER_LAYERS[0]);
   const [activeTime, setActiveTime] = useState(0);
   const [searchValue, setSearchValue] = useState("");
@@ -84,24 +86,30 @@ export function WeatherDashboard() {
       return getMockWeatherByRegion(selectedRegion);
     }
 
+    if (selectedOverlayPoint) {
+      return getWeatherFromOverlayPoint(selectedOverlayPoint);
+    }
+
     if (!selectedCountry) {
       return null;
     }
 
     return getMockWeatherByCountry(selectedCountry.code, selectedCountry.name);
-  }, [selectedCountry, selectedRegion]);
+  }, [selectedCountry, selectedOverlayPoint, selectedRegion]);
 
   const selectedLabel = weather?.regionName ?? weather?.countryName ?? "국가를 검색하거나 지도에서 선택하세요";
 
   function handleSelectCountry(country: SelectedCountry) {
     setSelectedCountry(country);
     setSelectedRegion(null);
+    setSelectedOverlayPoint(null);
     setSearchValue(country.name);
     setIsMobileWeatherOpen(true);
   }
 
   function handleSelectRegion(region: SelectedRegion) {
     setSelectedRegion(region);
+    setSelectedOverlayPoint(null);
     setIsMobileWeatherOpen(true);
   }
 
@@ -114,16 +122,21 @@ export function WeatherDashboard() {
   }
 
   function handleSelectWeatherOverlayPoint(point: WeatherOverlayPoint) {
-    handleSelectCountry({
+    setSelectedCountry({
       code: point.countryCode,
       name: point.countryName,
       coordinates: [point.longitude, point.latitude],
     });
+    setSelectedRegion(null);
+    setSelectedOverlayPoint(point);
+    setSearchValue(point.countryName);
+    setIsMobileWeatherOpen(true);
   }
 
   function handleClearWeatherSelection() {
     setSelectedCountry(null);
     setSelectedRegion(null);
+    setSelectedOverlayPoint(null);
     setSearchValue("");
     setIsMobileWeatherOpen(false);
   }

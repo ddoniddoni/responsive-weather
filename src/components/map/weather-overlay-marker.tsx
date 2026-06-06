@@ -78,7 +78,7 @@ function handleMarkerKeyDown(
 
 export function WeatherOverlayMarker({ point, onSelectPoint }: WeatherOverlayMarkerProps) {
   const conditionLabel = CONDITION_LABEL_MAP[point.condition];
-  const temperatureLabel = `${point.temperature}°`;
+  const temperatureLabel = `${point.temperature}\u00b0C`;
   const ariaLabel = `${point.label}, ${conditionLabel}, ${point.temperature} degrees`;
   const markerVisual = MARKER_VISUAL_MAP[point.condition];
 

@@ -13,6 +13,7 @@ export type WeatherData = {
   visibilityKm: number;
   condition: WeatherCondition;
   description: string;
+  updatedAt?: string;
 };
 
 export type SelectedCountry = {
@@ -37,6 +38,10 @@ export type WeatherOverlayPoint = {
   latitude: number;
   longitude: number;
   temperature: number;
+  feelsLike?: number;
+  humidity?: number;
+  windSpeed?: number;
   condition: WeatherCondition;
+  description?: string;
   updatedAt: string;
 };

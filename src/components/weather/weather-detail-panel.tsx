@@ -33,10 +33,11 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
 
   const title = weather.regionName ?? weather.countryName;
   const subtitle = weather.regionName ? `${weather.countryName} / ${weather.regionCode}` : weather.countryCode;
+  const updatedDate = weather.updatedAt ? new Date(weather.updatedAt) : new Date();
   const updatedAt = new Intl.DateTimeFormat("ko", {
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date());
+  }).format(Number.isNaN(updatedDate.getTime()) ? new Date() : updatedDate);
   const temperatureText = `${weather.temperature}\u00b0C`;
   const insights = getWeatherInsights(weather);
   const metricCards = [
