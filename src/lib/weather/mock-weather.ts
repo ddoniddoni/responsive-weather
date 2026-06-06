@@ -107,6 +107,7 @@ export function getMockWeatherByCountry(countryCode: string, countryName: string
     countryCode,
     countryName,
     ...weather,
+    sourceLabel: "Mock country preview",
   };
 }
 
@@ -121,6 +122,7 @@ export function getMockWeatherByRegion(region: SelectedRegion): WeatherData {
     regionCode: region.regionCode,
     regionName: region.regionName,
     ...weather,
+    sourceLabel: "Mock regional preview",
   };
 }
 

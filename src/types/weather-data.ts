@@ -14,6 +14,7 @@ export type WeatherData = {
   condition: WeatherCondition;
   description: string;
   updatedAt?: string;
+  sourceLabel?: string;
 };
 
 export type SelectedCountry = {

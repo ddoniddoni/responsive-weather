@@ -33,6 +33,7 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
 
   const title = weather.regionName ?? weather.countryName;
   const subtitle = weather.regionName ? `${weather.countryName} / ${weather.regionCode}` : weather.countryCode;
+  const sourceLabel = weather.sourceLabel ?? "Weather data";
   const updatedDate = weather.updatedAt ? new Date(weather.updatedAt) : new Date();
   const updatedAt = new Intl.DateTimeFormat("ko", {
     hour: "2-digit",
@@ -71,7 +72,12 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
             Weather Detail
           </p>
           <h2 className="mt-2 truncate text-xl font-semibold text-slate-950 dark:text-slate-100">{title}</h2>
-          <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="font-mono text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
+            <span className="inline-flex min-h-6 items-center rounded-md border border-slate-200 bg-slate-50 px-2 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              {sourceLabel}
+            </span>
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <WeatherReactiveButton condition={weather.condition} theme={theme}>

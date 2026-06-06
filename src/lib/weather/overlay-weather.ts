@@ -16,6 +16,8 @@ function getFallbackWindSpeed(point: WeatherOverlayPoint) {
 }
 
 export function getWeatherFromOverlayPoint(point: WeatherOverlayPoint): WeatherData {
+  const sourceLabel = point.updatedAt === "Mock now" ? "Mock overlay" : "Open-Meteo current";
+
   return {
     countryCode: point.countryCode,
     countryName: point.countryName,
@@ -32,5 +34,6 @@ export function getWeatherFromOverlayPoint(point: WeatherOverlayPoint): WeatherD
       point.description ??
       `${point.label} realtime weather is normalized from the overlay feed.`,
     updatedAt: point.updatedAt,
+    sourceLabel,
   };
 }

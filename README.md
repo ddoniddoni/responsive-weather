@@ -118,5 +118,6 @@ npm.cmd run build
 - Step 007에서 오버레이 데이터 로딩과 새로고침 상태를 `useWeatherOverlay` 훅으로 분리했습니다.
 - Step 008에서 모바일 저줌 상태의 오버레이 마커 밀도를 낮추고 compact 표시를 추가했습니다.
 - Step 009에서 국가/검색 선택 시 매칭되는 대표 오버레이 지점의 Open-Meteo 값을 재사용하도록 연결했습니다.
+- Step 010에서 상세 패널에 Open-Meteo, mock overlay, mock preview 출처 라벨을 표시했습니다.
 - 일반 국가/지역 선택은 아직 mock 날씨 데이터를 fallback으로 사용합니다.
 - 인증, 저장 위치, 사용자 계정, 결제 기능은 없습니다.
