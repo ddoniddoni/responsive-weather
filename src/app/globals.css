@@ -564,6 +564,21 @@ html.dark .weather-overlay-marker-label {
   stroke: rgba(15, 23, 42, 0.9);
 }
 
+@media (max-width: 767px) {
+  .weather-overlay-marker-halo {
+    r: 12;
+  }
+
+  .weather-overlay-marker-core {
+    r: 7.5;
+  }
+
+  .weather-overlay-marker-label {
+    font-size: 9px;
+    stroke-width: 3px;
+  }
+}
+
 @keyframes map-sun-pulse {
   0%,
   100% {

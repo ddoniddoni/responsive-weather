@@ -25,6 +25,8 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 8;
 const FOCUSED_ZOOM = 2.8;
 const ZOOM_STEP = 0.65;
+const COMPACT_OVERLAY_ZOOM_THRESHOLD = 2.2;
+const MOBILE_VISIBLE_OVERLAY_COUNT = 4;
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
@@ -133,6 +135,25 @@ function getServerMountSnapshot() {
   return false;
 }
 
+function subscribeToCompactViewport(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  const mediaQuery = window.matchMedia("(max-width: 767px)");
+  mediaQuery.addEventListener("change", onStoreChange);
+
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+}
+
+function getCompactViewportSnapshot() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+}
+
+function getServerCompactViewportSnapshot() {
+  return false;
+}
+
 export function WorldMap({
   activeLayerId = "temperature",
   selectedCountryCode,
@@ -155,6 +176,11 @@ export function WorldMap({
     subscribeToClientMount,
     getClientMountSnapshot,
     getServerMountSnapshot,
+  );
+  const isCompactViewport = useSyncExternalStore(
+    subscribeToCompactViewport,
+    getCompactViewportSnapshot,
+    getServerCompactViewportSnapshot,
   );
   const { boundaries, status: adminBoundaryStatus } = useAdminBoundaries(selectedCountryCode);
   const [mapPosition, setMapPosition] = useState<MapPosition>({
@@ -313,6 +339,18 @@ export function WorldMap({
     ? selectedMarkerCoordinates
     : selectedCountryCoordinatesFromProps ?? selectedMarkerCoordinates;
   const canShowSelectedMarker = visibleSelectedMarkerCoordinates !== null;
+  const shouldLimitOverlayMarkers =
+    isCompactViewport && mapPosition.zoom < COMPACT_OVERLAY_ZOOM_THRESHOLD;
+  const visibleWeatherOverlayPoints = shouldLimitOverlayMarkers
+    ? weatherOverlayPoints.slice(0, MOBILE_VISIBLE_OVERLAY_COUNT)
+    : weatherOverlayPoints;
+  const compactOverlayStatusLabel =
+    isWeatherOverlayVisible && shouldLimitOverlayMarkers && weatherOverlayPoints.length > visibleWeatherOverlayPoints.length
+      ? `Compact mobile overlay: ${visibleWeatherOverlayPoints.length}/${weatherOverlayPoints.length} points`
+      : null;
+  const visibleWeatherOverlayStatusLabel = [weatherOverlayStatusLabel, compactOverlayStatusLabel]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
@@ -427,7 +465,7 @@ export function WorldMap({
               </Geographies>
 
               {isWeatherOverlayVisible
-                ? weatherOverlayPoints.map((point) => (
+                ? visibleWeatherOverlayPoints.map((point) => (
                     <WeatherOverlayMarker key={point.id} point={point} onSelectPoint={handleSelectWeatherOverlayPoint} />
                   ))
                 : null}
@@ -540,12 +578,12 @@ export function WorldMap({
             >
               Reset
             </button>
-            {weatherOverlayStatusLabel ? (
+            {visibleWeatherOverlayStatusLabel ? (
               <div
                 role="status"
                 className="min-h-10 rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100"
               >
-                {weatherOverlayStatusLabel}
+                {visibleWeatherOverlayStatusLabel}
               </div>
             ) : null}
           </div>
