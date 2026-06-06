@@ -129,3 +129,9 @@ npm.cmd run build
 - Added user-location camera focus with a visible Locate control and status text.
 - Raised the minimum map zoom so the weather map does not collapse into a full-world overview.
 - Wrapped longitude values and rendered side world copies to make horizontal panning feel continuous.
+
+## Step 014 Update
+
+- Added a lightweight heatmap-style SVG layer that changes with the selected weather layer.
+- Extended Open-Meteo overlay data with current precipitation.
+- Cleaned weather layer labels so temperature, feels-like, precipitation, radar, wind, clouds, pressure, and humidity controls are readable.

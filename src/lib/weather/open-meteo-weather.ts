@@ -7,6 +7,7 @@ const CURRENT_WEATHER_VARIABLES = [
   "temperature_2m",
   "relative_humidity_2m",
   "apparent_temperature",
+  "precipitation",
   "wind_speed_10m",
   "weather_code",
 ];
@@ -16,6 +17,7 @@ type OpenMeteoCurrentWeather = {
   temperature_2m?: number | null;
   relative_humidity_2m?: number | null;
   apparent_temperature?: number | null;
+  precipitation?: number | null;
   wind_speed_10m?: number | null;
   weather_code?: number | null;
 };
@@ -95,6 +97,9 @@ function normalizeOpenMeteoOverlayPoint(
   const humidity = isFiniteNumber(current?.relative_humidity_2m)
     ? Math.round(current.relative_humidity_2m)
     : basePoint.humidity;
+  const precipitationMm = isFiniteNumber(current?.precipitation)
+    ? Number(current.precipitation.toFixed(1))
+    : basePoint.precipitationMm;
   const windSpeed = isFiniteNumber(current?.wind_speed_10m)
     ? Number(current.wind_speed_10m.toFixed(1))
     : basePoint.windSpeed;
@@ -105,6 +110,7 @@ function normalizeOpenMeteoOverlayPoint(
     temperature,
     feelsLike,
     humidity,
+    precipitationMm,
     windSpeed,
     condition,
     description: getOpenMeteoDescription(basePoint.label, condition),

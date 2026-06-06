@@ -42,6 +42,7 @@ export type WeatherOverlayPoint = {
   feelsLike?: number;
   humidity?: number;
   windSpeed?: number;
+  precipitationMm?: number;
   condition: WeatherCondition;
   description?: string;
   updatedAt: string;

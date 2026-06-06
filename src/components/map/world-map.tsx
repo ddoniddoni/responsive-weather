@@ -15,6 +15,7 @@ import { useAdminBoundaries } from "@/hooks/use-admin-boundaries";
 import type { AdminBoundaryLoadStatus } from "@/types/admin-boundary";
 import type { MapMode } from "@/types/map-mode";
 import type { WeatherCondition } from "@/types/weather";
+import type { WeatherLayerId } from "@/types/weather-layer";
 import type { SelectedCountry, SelectedRegion, WeatherOverlayPoint } from "@/types/weather-data";
 
 const WORLD_GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -44,7 +45,7 @@ const FOCUSED_ZOOM_BY_COUNTRY_CODE: Record<string, number> = {
 };
 
 type WorldMapProps = {
-  activeLayerId?: string;
+  activeLayerId?: WeatherLayerId;
   selectedCountryCode: string | null;
   selectedCountryName: string | null;
   selectedCountryCoordinates: [number, number] | null;
@@ -86,6 +87,13 @@ type UserLocationStatus = "idle" | "locating" | "success" | "unsupported" | "den
 type ZoomableGroupMoveEnd = {
   coordinates: [number, number];
   zoom: number;
+};
+
+type WeatherHeatPoint = {
+  point: WeatherOverlayPoint;
+  color: string;
+  opacity: number;
+  radius: number;
 };
 
 function getCountryCode(feature: GeographyFeature, countryName: string) {
@@ -140,6 +148,133 @@ function getUserLocationStatusLabel(status: UserLocationStatus) {
   };
 
   return labelMap[status];
+}
+
+function clampRatio(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function normalizeLayerValue(value: number, min: number, max: number) {
+  return clampRatio((value - min) / (max - min));
+}
+
+function getConditionPrecipitationEstimate(condition: WeatherCondition) {
+  const estimateMap: Record<WeatherCondition, number> = {
+    sunny: 0,
+    cloudy: 0.2,
+    foggy: 0.1,
+    rainy: 4,
+    stormy: 14,
+    snowy: 1.8,
+    unknown: 0,
+  };
+
+  return estimateMap[condition];
+}
+
+function getConditionCloudEstimate(condition: WeatherCondition) {
+  const estimateMap: Record<WeatherCondition, number> = {
+    sunny: 8,
+    cloudy: 72,
+    foggy: 86,
+    rainy: 88,
+    stormy: 94,
+    snowy: 82,
+    unknown: 46,
+  };
+
+  return estimateMap[condition];
+}
+
+function getWeatherLayerRatio(point: WeatherOverlayPoint, activeLayerId: WeatherLayerId) {
+  switch (activeLayerId) {
+    case "temperature":
+      return normalizeLayerValue(point.temperature, -10, 40);
+    case "feels-like":
+      return normalizeLayerValue(point.feelsLike ?? point.temperature, -10, 42);
+    case "precipitation":
+    case "radar":
+      return normalizeLayerValue(
+        point.precipitationMm ?? getConditionPrecipitationEstimate(point.condition),
+        0,
+        activeLayerId === "radar" ? 18 : 10,
+      );
+    case "wind":
+      return normalizeLayerValue(point.windSpeed ?? 0, 0, 18);
+    case "clouds":
+      return normalizeLayerValue(getConditionCloudEstimate(point.condition), 0, 100);
+    case "pressure":
+      return normalizeLayerValue(1013 + (point.temperature - 18) * 0.7 - (point.windSpeed ?? 0), 990, 1040);
+    case "humidity":
+      return normalizeLayerValue(point.humidity ?? 55, 10, 100);
+    default:
+      return 0.5;
+  }
+}
+
+function getWeatherLayerColor(activeLayerId: WeatherLayerId, ratio: number) {
+  const paletteMap: Record<WeatherLayerId, string[]> = {
+    temperature: ["#2563eb", "#22c55e", "#facc15", "#f97316", "#b91c1c"],
+    "feels-like": ["#312e81", "#0ea5e9", "#22c55e", "#f59e0b", "#be123c"],
+    precipitation: ["#f8fafc", "#a7f3d0", "#0891b2", "#2563eb", "#7e22ce"],
+    radar: ["#dbeafe", "#38bdf8", "#22c55e", "#facc15", "#e11d48"],
+    wind: ["#f8fafc", "#99f6e4", "#14b8a6", "#2563eb", "#111827"],
+    clouds: ["#f8fafc", "#e2e8f0", "#cbd5e1", "#94a3b8", "#334155"],
+    pressure: ["#1d4ed8", "#60a5fa", "#f8fafc", "#f97316", "#b91c1c"],
+    humidity: ["#f8fafc", "#ccfbf1", "#5eead4", "#0891b2", "#164e63"],
+  };
+  const palette = paletteMap[activeLayerId];
+  const index = Math.min(palette.length - 1, Math.floor(clampRatio(ratio) * palette.length));
+
+  return palette[index];
+}
+
+function getWeatherHeatPoints(points: WeatherOverlayPoint[], activeLayerId: WeatherLayerId) {
+  return points.map((point) => {
+    const ratio = getWeatherLayerRatio(point, activeLayerId);
+
+    return {
+      point,
+      color: getWeatherLayerColor(activeLayerId, ratio),
+      opacity: 0.18 + ratio * 0.34,
+      radius: 56 + ratio * 74,
+    };
+  });
+}
+
+function WeatherHeatLayer({
+  activeLayerId,
+  points,
+}: {
+  activeLayerId: WeatherLayerId;
+  points: WeatherOverlayPoint[];
+}) {
+  const heatPoints = getWeatherHeatPoints(points, activeLayerId);
+
+  if (heatPoints.length === 0) {
+    return null;
+  }
+
+  return (
+    <g className="weather-heat-layer" aria-hidden="true" style={{ pointerEvents: "none" }}>
+      {heatPoints.map((heatPoint: WeatherHeatPoint) => (
+        <Marker key={`${activeLayerId}-${heatPoint.point.id}`} coordinates={[heatPoint.point.longitude, heatPoint.point.latitude]}>
+          <circle
+            r={heatPoint.radius}
+            fill={heatPoint.color}
+            opacity={heatPoint.opacity}
+            className="weather-heat-layer-spot"
+          />
+          <circle
+            r={heatPoint.radius * 0.48}
+            fill={heatPoint.color}
+            opacity={Math.min(0.72, heatPoint.opacity + 0.2)}
+            className="weather-heat-layer-core"
+          />
+        </Marker>
+      ))}
+    </g>
+  );
 }
 
 function subscribeToClientMount(onStoreChange: () => void) {
@@ -544,6 +679,10 @@ export function WorldMap({
                   </g>
                 );
               })}
+
+              {isWeatherOverlayVisible ? (
+                <WeatherHeatLayer activeLayerId={activeLayerId} points={visibleWeatherOverlayPoints} />
+              ) : null}
 
               {isWeatherOverlayVisible
                 ? visibleWeatherOverlayPoints.map((point) => (

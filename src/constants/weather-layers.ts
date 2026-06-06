@@ -3,8 +3,8 @@ import type { WeatherLayer } from "@/types/weather-layer";
 export const WEATHER_LAYERS: WeatherLayer[] = [
   {
     id: "temperature",
-    label: "기온",
-    shortLabel: "기온",
+    label: "Temperature",
+    shortLabel: "Temp",
     unit: "\u00b0C",
     legendValues: ["40", "35", "30", "25", "20", "15", "10", "5", "0", "-5", "-10"],
     legendPalette: [
@@ -23,8 +23,8 @@ export const WEATHER_LAYERS: WeatherLayer[] = [
   },
   {
     id: "feels-like",
-    label: "체감 온도",
-    shortLabel: "체감",
+    label: "Feels like",
+    shortLabel: "Feels",
     unit: "\u00b0C",
     legendValues: ["40", "35", "30", "25", "20", "15", "10", "5", "0", "-5", "-10"],
     legendPalette: [
@@ -43,52 +43,52 @@ export const WEATHER_LAYERS: WeatherLayer[] = [
   },
   {
     id: "precipitation",
-    label: "강수량",
-    shortLabel: "강수",
+    label: "Precipitation",
+    shortLabel: "Rain",
     unit: "mm",
     legendValues: ["80", "60", "40", "20", "10", "5", "1", "0"],
     legendPalette: ["#581c87", "#7e22ce", "#2563eb", "#0284c7", "#0891b2", "#14b8a6", "#a7f3d0", "#f8fafc"],
   },
   {
     id: "radar",
-    label: "레이더",
-    shortLabel: "레이더",
+    label: "Radar",
+    shortLabel: "Radar",
     unit: "dBZ",
     legendValues: ["65", "55", "45", "35", "25", "15", "5"],
     legendPalette: ["#be123c", "#e11d48", "#f97316", "#facc15", "#22c55e", "#38bdf8", "#dbeafe"],
   },
   {
     id: "wind",
-    label: "바람",
-    shortLabel: "바람",
+    label: "Wind",
+    shortLabel: "Wind",
     unit: "m/s",
     legendValues: ["32", "24", "18", "12", "8", "4", "0"],
     legendPalette: ["#111827", "#1e40af", "#2563eb", "#0891b2", "#14b8a6", "#99f6e4", "#f8fafc"],
   },
   {
     id: "clouds",
-    label: "구름",
-    shortLabel: "구름",
+    label: "Clouds",
+    shortLabel: "Clouds",
     unit: "%",
     legendValues: ["100", "80", "60", "40", "20", "0"],
     legendPalette: ["#334155", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f8fafc"],
   },
   {
     id: "pressure",
-    label: "기압",
-    shortLabel: "기압",
+    label: "Pressure",
+    shortLabel: "Press",
     unit: "hPa",
     legendValues: ["1040", "1030", "1020", "1010", "1000", "990"],
     legendPalette: ["#b91c1c", "#f97316", "#facc15", "#f8fafc", "#60a5fa", "#1d4ed8"],
   },
   {
     id: "humidity",
-    label: "습도",
-    shortLabel: "습도",
+    label: "Humidity",
+    shortLabel: "Humidity",
     unit: "%",
     legendValues: ["100", "85", "70", "55", "40", "25", "10"],
     legendPalette: ["#164e63", "#0e7490", "#0891b2", "#14b8a6", "#5eead4", "#ccfbf1", "#f8fafc"],
   },
 ];
 
-export const FORECAST_TIMES = ["지금", "03:00", "06:00", "09:00", "12:00", "15:00", "18:00", "21:00"];
+export const FORECAST_TIMES = ["Now", "03:00", "06:00", "09:00", "12:00", "15:00", "18:00", "21:00"];

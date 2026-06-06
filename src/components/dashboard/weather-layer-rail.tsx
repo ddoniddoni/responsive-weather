@@ -9,7 +9,7 @@ type WeatherLayerRailProps = {
 export function WeatherLayerRail({ activeLayer, layers, onSelectLayer }: WeatherLayerRailProps) {
   return (
     <aside
-      aria-label="날씨 레이어"
+      aria-label="Weather layers"
       className="absolute left-3 right-3 top-32 z-20 flex max-w-[calc(100vw-1.5rem)] gap-1.5 overflow-x-auto rounded-md border border-white/70 bg-slate-950/74 p-1.5 shadow-xl shadow-slate-950/18 backdrop-blur md:left-4 md:right-auto md:top-24 md:max-h-[calc(100vh-14rem)] md:w-44 md:max-w-none md:flex-col md:overflow-y-auto"
     >
       {layers.map((layer) => {
