@@ -135,3 +135,8 @@ npm.cmd run build
 - Added a lightweight heatmap-style SVG layer that changes with the selected weather layer.
 - Extended Open-Meteo overlay data with current precipitation.
 - Cleaned weather layer labels so temperature, feels-like, precipitation, radar, wind, clouds, pressure, and humidity controls are readable.
+
+## Step 015 Update
+
+- Repeated heat spots and compact weather markers across the wrapped side map copies.
+- Kept wrapped marker copies visual-only so keyboard and click interaction stay on the primary map.

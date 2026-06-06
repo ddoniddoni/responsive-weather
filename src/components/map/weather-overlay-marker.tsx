@@ -6,6 +6,7 @@ import type { WeatherOverlayPoint } from "@/types/weather-data";
 type WeatherOverlayMarkerProps = {
   point: WeatherOverlayPoint;
   onSelectPoint: (point: WeatherOverlayPoint) => void;
+  visualOnly?: boolean;
 };
 
 const CONDITION_LABEL_MAP: Record<WeatherOverlayPoint["condition"], string> = {
@@ -76,7 +77,7 @@ function handleMarkerKeyDown(
   onSelectPoint(point);
 }
 
-export function WeatherOverlayMarker({ point, onSelectPoint }: WeatherOverlayMarkerProps) {
+export function WeatherOverlayMarker({ point, onSelectPoint, visualOnly = false }: WeatherOverlayMarkerProps) {
   const conditionLabel = CONDITION_LABEL_MAP[point.condition];
   const temperatureLabel = `${point.temperature}\u00b0C`;
   const ariaLabel = `${point.label}, ${conditionLabel}, ${point.temperature} degrees`;
@@ -85,12 +86,14 @@ export function WeatherOverlayMarker({ point, onSelectPoint }: WeatherOverlayMar
   return (
     <Marker coordinates={[point.longitude, point.latitude]}>
       <g
-        role="button"
-        tabIndex={0}
-        aria-label={ariaLabel}
+        role={visualOnly ? undefined : "button"}
+        tabIndex={visualOnly ? undefined : 0}
+        aria-hidden={visualOnly}
+        aria-label={visualOnly ? undefined : ariaLabel}
         className={`weather-overlay-marker weather-overlay-marker-${point.condition}`}
-        onClick={() => onSelectPoint(point)}
-        onKeyDown={(event) => handleMarkerKeyDown(event, point, onSelectPoint)}
+        onClick={visualOnly ? undefined : () => onSelectPoint(point)}
+        onKeyDown={visualOnly ? undefined : (event) => handleMarkerKeyDown(event, point, onSelectPoint)}
+        style={{ pointerEvents: visualOnly ? "none" : "auto" }}
       >
         <title>{ariaLabel}</title>
         <circle

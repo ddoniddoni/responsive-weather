@@ -680,14 +680,29 @@ export function WorldMap({
                 );
               })}
 
-              {isWeatherOverlayVisible ? (
-                <WeatherHeatLayer activeLayerId={activeLayerId} points={visibleWeatherOverlayPoints} />
-              ) : null}
-
               {isWeatherOverlayVisible
-                ? visibleWeatherOverlayPoints.map((point) => (
-                    <WeatherOverlayMarker key={point.id} point={point} onSelectPoint={handleSelectWeatherOverlayPoint} />
-                  ))
+                ? WORLD_REPEAT_OFFSETS.map((offsetX) => {
+                    const isWrappedCopy = offsetX !== 0;
+
+                    return (
+                      <g
+                        key={`weather-overlay-${offsetX}`}
+                        transform={`translate(${offsetX} 0)`}
+                        aria-hidden={isWrappedCopy}
+                        style={{ pointerEvents: isWrappedCopy ? "none" : "auto" }}
+                      >
+                        <WeatherHeatLayer activeLayerId={activeLayerId} points={visibleWeatherOverlayPoints} />
+                        {visibleWeatherOverlayPoints.map((point) => (
+                          <WeatherOverlayMarker
+                            key={`${offsetX}-${point.id}`}
+                            point={point}
+                            visualOnly={isWrappedCopy}
+                            onSelectPoint={handleSelectWeatherOverlayPoint}
+                          />
+                        ))}
+                      </g>
+                    );
+                  })
                 : null}
 
               {canShowSelectedMarker && visibleSelectedMarkerCoordinates && selectedWeatherCondition ? (
