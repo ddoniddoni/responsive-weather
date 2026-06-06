@@ -33,6 +33,46 @@ function formatOverlayUpdatedAt(updatedAt: string | null) {
   }).format(updatedDate);
 }
 
+function getCoordinateDistance(
+  firstCoordinates: [number, number],
+  secondCoordinates: [number, number],
+) {
+  const longitudeDelta = firstCoordinates[0] - secondCoordinates[0];
+  const latitudeDelta = firstCoordinates[1] - secondCoordinates[1];
+
+  return longitudeDelta * longitudeDelta + latitudeDelta * latitudeDelta;
+}
+
+function findClosestCountryOverlayPoint(
+  country: SelectedCountry,
+  points: WeatherOverlayPoint[],
+) {
+  const countryOverlayPoints = points.filter((point) => point.countryCode === country.code);
+
+  if (countryOverlayPoints.length === 0) {
+    return null;
+  }
+
+  if (!country.coordinates) {
+    return countryOverlayPoints[0];
+  }
+
+  const countryCoordinates = country.coordinates;
+
+  return countryOverlayPoints.reduce((closestPoint, currentPoint) => {
+    const closestDistance = getCoordinateDistance(countryCoordinates, [
+      closestPoint.longitude,
+      closestPoint.latitude,
+    ]);
+    const currentDistance = getCoordinateDistance(countryCoordinates, [
+      currentPoint.longitude,
+      currentPoint.latitude,
+    ]);
+
+    return currentDistance < closestDistance ? currentPoint : closestPoint;
+  }, countryOverlayPoints[0]);
+}
+
 export function WeatherDashboard() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
@@ -84,9 +124,14 @@ export function WeatherDashboard() {
             : null;
 
   function handleSelectCountry(country: SelectedCountry) {
+    const countryOverlayPoint =
+      weatherOverlay.loadStatus === "success"
+        ? findClosestCountryOverlayPoint(country, weatherOverlay.points)
+        : null;
+
     setSelectedCountry(country);
     setSelectedRegion(null);
-    setSelectedOverlayPoint(null);
+    setSelectedOverlayPoint(countryOverlayPoint);
     setSearchValue(country.name);
     setIsMobileWeatherOpen(true);
   }
