@@ -146,3 +146,8 @@ npm.cmd run build
 - Added Windy-like map camera deep links such as `?37.482,127.139,5`.
 - Added explicit camera query support with `?lat=37.482&lon=127.139&zoom=5`.
 - Prevented automatic browser geolocation from overriding a valid URL camera.
+
+## Step 017 Update
+
+- Cleaned remaining dashboard copy in the top bar search, mobile weather sheet, and forecast timeline.
+- Preserved search keyboard navigation, mobile sheet expansion, and timeline controls.

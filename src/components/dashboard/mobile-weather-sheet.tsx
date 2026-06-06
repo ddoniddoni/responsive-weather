@@ -14,8 +14,8 @@ type MobileWeatherSheetProps = {
 function getWeatherSummary(weather: WeatherData | null) {
   if (!weather) {
     return {
-      title: "지역 선택",
-      subtitle: "지도나 검색에서 지역을 선택하세요",
+      title: "Select a location",
+      subtitle: "Search or tap the map to inspect weather.",
       temperatureText: "--",
     };
   }
@@ -37,31 +37,31 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
   const metricCards = weather
     ? [
         {
-          label: "기온",
+          label: "Temperature",
           value: `${weather.temperature}\u00b0C`,
-          helperText: "현재 대기 온도",
+          helperText: "Current air temperature",
         },
         {
-          label: "체감",
+          label: "Feels like",
           value: `${weather.feelsLike}\u00b0C`,
-          helperText: "야외 체감 온도",
+          helperText: "Perceived outdoor temperature",
         },
         {
-          label: "습도",
+          label: "Humidity",
           value: `${weather.humidity}%`,
-          helperText: "공기 중 수분 비율",
+          helperText: "Moisture in the air",
         },
         {
-          label: "바람",
+          label: "Wind",
           value: `${weather.windSpeed} m/s`,
-          helperText: "지표면 기준 풍속",
+          helperText: "Surface wind speed",
         },
       ]
     : [];
 
   return (
     <section
-      aria-label="모바일 날씨 상세"
+      aria-label="Mobile weather detail"
       className="absolute bottom-20 left-3 right-3 z-40 md:hidden"
     >
       <div className="overflow-hidden rounded-md border border-white/75 bg-white/95 shadow-2xl shadow-slate-950/22 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/92">
@@ -88,7 +88,7 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
               type="button"
               aria-expanded={isOpen}
               aria-controls="mobile-weather-sheet-body"
-              aria-label={isOpen ? "날씨 상세 접기" : "날씨 상세 펼치기"}
+              aria-label={isOpen ? "Collapse weather details" : "Expand weather details"}
               onClick={onToggleOpen}
               className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-sm font-bold text-slate-900 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
             >
@@ -135,7 +135,7 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
               </>
             ) : (
               <p className="break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
-                국가를 검색하거나 지도를 탭하면 이 시트에서 상세 날씨를 바로 확인할 수 있습니다.
+                Search for a country or tap the map to show local weather details here.
               </p>
             )}
           </div>

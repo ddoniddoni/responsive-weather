@@ -10,7 +10,7 @@ export function ForecastTimeline({ activeTime, times, onSelectTime }: ForecastTi
       <div className="mx-auto flex max-w-7xl flex-col gap-3 md:flex-row md:items-center">
         <button
           type="button"
-          aria-label="이전 예보 시간"
+          aria-label="Previous forecast time"
           onClick={() => onSelectTime(Math.max(0, activeTime - 1))}
           className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-md border border-white/20 bg-white/10 font-mono text-sm font-semibold transition-colors hover:bg-white/18 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 md:inline-flex"
         >
@@ -33,7 +33,7 @@ export function ForecastTimeline({ activeTime, times, onSelectTime }: ForecastTi
         </div>
         <button
           type="button"
-          aria-label="다음 예보 시간"
+          aria-label="Next forecast time"
           onClick={() => onSelectTime(Math.min(times.length - 1, activeTime + 1))}
           className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-md border border-white/20 bg-white/10 font-mono text-sm font-semibold transition-colors hover:bg-white/18 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 md:inline-flex"
         >
