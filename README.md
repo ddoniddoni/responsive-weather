@@ -120,5 +120,6 @@ npm.cmd run build
 - Step 009에서 국가/검색 선택 시 매칭되는 대표 오버레이 지점의 Open-Meteo 값을 재사용하도록 연결했습니다.
 - Step 010에서 상세 패널에 Open-Meteo, mock overlay, mock preview 출처 라벨을 표시했습니다.
 - Step 011에서 상세 패널의 깨진 주요 copy와 aria label을 읽을 수 있는 문구로 정리했습니다.
+- Step 012에서 지도 컨트롤과 상태 메시지의 깨진 copy/aria label을 정리했습니다.
 - 일반 국가/지역 선택은 아직 mock 날씨 데이터를 fallback으로 사용합니다.
 - 인증, 저장 위치, 사용자 계정, 결제 기능은 없습니다.

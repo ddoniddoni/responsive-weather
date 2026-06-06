@@ -112,10 +112,10 @@ function getFocusedZoom(countryCode: string) {
 function getAdminBoundaryStatusLabel(status: AdminBoundaryLoadStatus) {
   const labelMap: Record<AdminBoundaryLoadStatus, string | null> = {
     idle: null,
-    loading: "지역 경계를 불러오는 중",
+    loading: "Loading regional boundaries...",
     success: null,
-    error: "지역 경계를 잠시 불러올 수 없습니다",
-    unsupported: "이 위치는 지역 경계를 지원하지 않습니다",
+    error: "Regional boundaries could not be loaded.",
+    unsupported: "Regional boundaries are not available for this location.",
   };
 
   return labelMap[status];
@@ -350,7 +350,7 @@ export function WorldMap({
       : null;
   const visibleWeatherOverlayStatusLabel = [weatherOverlayStatusLabel, compactOverlayStatusLabel]
     .filter(Boolean)
-    .join(" · ");
+    .join(" / ");
 
   return (
     <div
@@ -364,7 +364,7 @@ export function WorldMap({
       {!isImmersive ? (
         <div className="flex h-12 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-950">
           <p className="min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
-            {hoveredCountryName ?? visibleSelectedLabel ?? "지도에서 국가를 선택하세요"}
+            {hoveredCountryName ?? visibleSelectedLabel ?? "Select a country on the map"}
           </p>
           <span className="hidden rounded-md border border-slate-200 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:border-slate-800 dark:text-slate-400 sm:inline">
             {isRegionalMode ? "Regional Detail" : "Live Weather Map"}
@@ -501,7 +501,7 @@ export function WorldMap({
                             onPointerDown={(event) => event.stopPropagation()}
                             onClick={handleOpenRegionalDetail}
                             className="weather-country-detail-button"
-                            aria-label={`${visibleSelectedLabel} 지역 상세 보기`}
+                            aria-label={`${visibleSelectedLabel} regional detail`}
                           >
                             Detail
                           </button>
@@ -525,7 +525,7 @@ export function WorldMap({
               type="button"
               onClick={onToggleWeatherOverlay}
               aria-pressed={isWeatherOverlayVisible}
-              aria-label={isWeatherOverlayVisible ? "날씨 오버레이 숨기기" : "날씨 오버레이 보이기"}
+              aria-label={isWeatherOverlayVisible ? "Hide weather overlay" : "Show weather overlay"}
               className={`inline-flex h-10 items-center justify-center rounded-md border px-3 text-xs font-semibold shadow-sm backdrop-blur transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
                 isWeatherOverlayVisible
                   ? "border-cyan-500/70 bg-cyan-950/88 text-cyan-50 hover:bg-cyan-900 dark:border-cyan-300/50 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
@@ -557,7 +557,7 @@ export function WorldMap({
             <button
               type="button"
               onClick={handleZoomIn}
-              aria-label="지도 확대"
+              aria-label="Zoom map in"
               className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 font-mono text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
             >
               +
@@ -565,7 +565,7 @@ export function WorldMap({
             <button
               type="button"
               onClick={handleZoomOut}
-              aria-label="지도 축소"
+              aria-label="Zoom map out"
               className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 font-mono text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
             >
               -
@@ -573,7 +573,7 @@ export function WorldMap({
             <button
               type="button"
               onClick={handleResetView}
-              aria-label="지도 초기화"
+              aria-label="Reset map view"
               className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
             >
               Reset
@@ -603,8 +603,8 @@ export function WorldMap({
         <div className="flex flex-col gap-1 border-t border-slate-200 px-4 py-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
           <p>
             {isRegionalMode
-              ? "지역을 선택해 세부 날씨를 보거나 세계지도로 돌아갈 수 있습니다."
-              : "드래그로 지도를 이동하고, 휠 또는 +/- 버튼으로 확대/축소할 수 있습니다."}
+              ? "Select a region to inspect local weather, or return to the world map."
+              : "Drag the map to move, or use the +/- buttons to zoom."}
           </p>
           {selectedCountryCode ? (
             <p>
