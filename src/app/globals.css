@@ -492,89 +492,34 @@ html.dark .weather-country-popout-dot {
   transform-origin: center;
 }
 
-.weather-overlay-marker-halo {
-  fill: rgba(255, 255, 255, 0.72);
-  stroke: rgba(15, 23, 42, 0.18);
-  stroke-width: 1;
-  filter: drop-shadow(0 5px 7px rgba(15, 23, 42, 0.22));
-  transition:
-    fill 160ms ease,
-    stroke 160ms ease,
-    transform 160ms ease;
-}
-
-.weather-overlay-marker-core {
-  fill: #0f172a;
+.weather-overlay-marker-dot {
   stroke: rgba(255, 255, 255, 0.9);
   stroke-width: 1.2;
-}
-
-.weather-overlay-marker-icon {
-  fill: #ffffff;
-  stroke: #ffffff;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.4;
-  pointer-events: none;
-}
-
-.weather-overlay-marker-cloud,
-.weather-overlay-marker-rain {
-  fill: #ffffff;
-  stroke: rgba(15, 23, 42, 0.46);
-  stroke-width: 0.8;
-}
-
-.weather-overlay-marker-rain line,
-.weather-overlay-marker-rain path,
-.weather-overlay-marker-snow line {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 1.5;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.34));
+  transition:
+    stroke 160ms ease,
+    transform 160ms ease;
 }
 
 .weather-overlay-marker-label {
   fill: #0f172a;
   paint-order: stroke;
-  stroke: rgba(255, 255, 255, 0.88);
-  stroke-width: 4px;
+  stroke: rgba(255, 255, 255, 0.94);
+  stroke-width: 3px;
   font-family: var(--font-jetbrains-mono), monospace;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 800;
   pointer-events: none;
 }
 
-.weather-overlay-marker-sunny .weather-overlay-marker-core {
-  fill: #d97706;
+.weather-overlay-marker:hover .weather-overlay-marker-dot,
+.weather-overlay-marker:focus-visible .weather-overlay-marker-dot {
+  stroke: rgba(14, 116, 144, 0.9);
+  transform: scale(1.25);
 }
 
-.weather-overlay-marker-cloudy .weather-overlay-marker-core,
-.weather-overlay-marker-foggy .weather-overlay-marker-core {
-  fill: #475569;
-}
-
-.weather-overlay-marker-rainy .weather-overlay-marker-core {
-  fill: #0284c7;
-}
-
-.weather-overlay-marker-stormy .weather-overlay-marker-core {
-  fill: #7c3aed;
-}
-
-.weather-overlay-marker-snowy .weather-overlay-marker-core {
-  fill: #0891b2;
-}
-
-.weather-overlay-marker:hover .weather-overlay-marker-halo,
-.weather-overlay-marker:focus-visible .weather-overlay-marker-halo {
-  fill: rgba(255, 255, 255, 0.94);
-  stroke: rgba(14, 116, 144, 0.72);
-  transform: scale(1.12);
-}
-
-html.dark .weather-overlay-marker-halo {
-  fill: rgba(15, 23, 42, 0.74);
-  stroke: rgba(226, 232, 240, 0.28);
+html.dark .weather-overlay-marker-dot {
+  stroke: rgba(15, 23, 42, 0.9);
 }
 
 html.dark .weather-overlay-marker-label {
@@ -583,17 +528,13 @@ html.dark .weather-overlay-marker-label {
 }
 
 @media (max-width: 767px) {
-  .weather-overlay-marker-halo {
-    r: 12;
-  }
-
-  .weather-overlay-marker-core {
-    r: 7.5;
+  .weather-overlay-marker-dot {
+    r: 2.4;
   }
 
   .weather-overlay-marker-label {
     font-size: 9px;
-    stroke-width: 3px;
+    stroke-width: 2.6px;
   }
 }
 

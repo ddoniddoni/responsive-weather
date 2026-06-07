@@ -23,45 +23,29 @@ const CONDITION_LABEL_MAP: Record<WeatherOverlayPoint["condition"], string> = {
 const MARKER_VISUAL_MAP: Record<
   WeatherOverlayPoint["condition"],
   {
-    coreFill: string;
-    haloFill: string;
-    haloStroke: string;
+    dotFill: string;
   }
 > = {
   sunny: {
-    coreFill: "#d97706",
-    haloFill: "rgba(255, 247, 237, 0.88)",
-    haloStroke: "rgba(217, 119, 6, 0.42)",
+    dotFill: "#d97706",
   },
   cloudy: {
-    coreFill: "#64748b",
-    haloFill: "rgba(248, 250, 252, 0.82)",
-    haloStroke: "rgba(100, 116, 139, 0.42)",
+    dotFill: "#64748b",
   },
   foggy: {
-    coreFill: "#94a3b8",
-    haloFill: "rgba(248, 250, 252, 0.82)",
-    haloStroke: "rgba(100, 116, 139, 0.42)",
+    dotFill: "#94a3b8",
   },
   rainy: {
-    coreFill: "#0284c7",
-    haloFill: "rgba(240, 249, 255, 0.84)",
-    haloStroke: "rgba(2, 132, 199, 0.42)",
+    dotFill: "#0284c7",
   },
   stormy: {
-    coreFill: "#7c3aed",
-    haloFill: "rgba(245, 243, 255, 0.84)",
-    haloStroke: "rgba(124, 58, 237, 0.46)",
+    dotFill: "#7c3aed",
   },
   snowy: {
-    coreFill: "#0891b2",
-    haloFill: "rgba(236, 254, 255, 0.84)",
-    haloStroke: "rgba(8, 145, 178, 0.42)",
+    dotFill: "#0891b2",
   },
   unknown: {
-    coreFill: "#94a3b8",
-    haloFill: "rgba(248, 250, 252, 0.76)",
-    haloStroke: "rgba(100, 116, 139, 0.34)",
+    dotFill: "#94a3b8",
   },
 };
 
@@ -105,55 +89,13 @@ export function WeatherOverlayMarker({
         <g transform={`scale(${scale})`}>
           <circle
             cx="0"
-            cy="0"
-            r="14"
-            className="weather-overlay-marker-halo"
-            fill={markerVisual.haloFill}
-            stroke={markerVisual.haloStroke}
-            style={{ fill: markerVisual.haloFill, stroke: markerVisual.haloStroke }}
+            cy="-7"
+            r="2.8"
+            className="weather-overlay-marker-dot"
+            fill={markerVisual.dotFill}
+            style={{ fill: markerVisual.dotFill }}
           />
-          <circle
-            cx="0"
-            cy="0"
-            r="8.5"
-            className="weather-overlay-marker-core"
-            fill={markerVisual.coreFill}
-            style={{ fill: markerVisual.coreFill }}
-          />
-          {point.condition === "sunny" ? (
-            <g className="weather-overlay-marker-icon weather-overlay-marker-sun" aria-hidden="true">
-              <circle cx="0" cy="0" r="4" />
-              <line x1="0" y1="-8" x2="0" y2="-11" />
-              <line x1="0" y1="8" x2="0" y2="11" />
-              <line x1="-8" y1="0" x2="-11" y2="0" />
-              <line x1="8" y1="0" x2="11" y2="0" />
-            </g>
-          ) : null}
-          {point.condition === "cloudy" || point.condition === "foggy" ? (
-            <g className="weather-overlay-marker-icon weather-overlay-marker-cloud" aria-hidden="true">
-              <ellipse cx="0" cy="2" rx="6.8" ry="3.8" />
-              <circle cx="-3.2" cy="-1" r="3" />
-              <circle cx="2.2" cy="-2.2" r="3.8" />
-            </g>
-          ) : null}
-          {point.condition === "rainy" || point.condition === "stormy" ? (
-            <g className="weather-overlay-marker-icon weather-overlay-marker-rain" aria-hidden="true">
-              <ellipse cx="0" cy="-1.5" rx="6.8" ry="3.8" />
-              <circle cx="-3.5" cy="-4.2" r="2.8" />
-              <circle cx="2.2" cy="-5.4" r="3.8" />
-              <line x1="-4" y1="5" x2="-5.8" y2="10" />
-              <line x1="1" y1="5.5" x2="-0.8" y2="11" />
-              {point.condition === "stormy" ? <path d="M4 3 L1 9 H5 L2 15" /> : null}
-            </g>
-          ) : null}
-          {point.condition === "snowy" ? (
-            <g className="weather-overlay-marker-icon weather-overlay-marker-snow" aria-hidden="true">
-              <line x1="0" y1="-7" x2="0" y2="7" />
-              <line x1="-6" y1="-3.5" x2="6" y2="3.5" />
-              <line x1="-6" y1="3.5" x2="6" y2="-3.5" />
-            </g>
-          ) : null}
-          <text x="0" y="29" textAnchor="middle" className="weather-overlay-marker-label">
+          <text x="0" y="7" textAnchor="middle" className="weather-overlay-marker-label">
             {temperatureLabel}
           </text>
         </g>
