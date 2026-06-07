@@ -30,6 +30,8 @@ const ZOOM_STEP = 0.65;
 const WORLD_REPEAT_OFFSETS = [-880, 0, 880];
 const COMPACT_OVERLAY_ZOOM_THRESHOLD = 2.2;
 const MOBILE_VISIBLE_OVERLAY_COUNT = 4;
+const MIN_OVERLAY_MARKER_SCALE = 0.26;
+const MIN_HEAT_LAYER_ZOOM_FACTOR = 1;
 
 const MOCK_WEATHER_COUNTRY_CODES: Record<string, string> = {
   France: "FRA",
@@ -293,15 +295,21 @@ function getWeatherLayerColor(activeLayerId: WeatherLayerId, ratio: number) {
   return palette[index];
 }
 
-function getWeatherHeatPoints(points: WeatherOverlayPoint[], activeLayerId: WeatherLayerId) {
+function getOverlayMarkerScale(zoom: number) {
+  return Math.max(MIN_OVERLAY_MARKER_SCALE, Math.min(1, 1 / Math.max(MIN_HEAT_LAYER_ZOOM_FACTOR, zoom * 0.7)));
+}
+
+function getWeatherHeatPoints(points: WeatherOverlayPoint[], activeLayerId: WeatherLayerId, zoom: number) {
+  const zoomFactor = Math.max(MIN_HEAT_LAYER_ZOOM_FACTOR, zoom);
+
   return points.map((point) => {
     const ratio = getWeatherLayerRatio(point, activeLayerId);
 
     return {
       point,
       color: getWeatherLayerColor(activeLayerId, ratio),
-      opacity: 0.18 + ratio * 0.34,
-      radius: 56 + ratio * 74,
+      opacity: 0.1 + ratio * 0.2,
+      radius: (48 + ratio * 28) / zoomFactor,
     };
   });
 }
@@ -309,11 +317,13 @@ function getWeatherHeatPoints(points: WeatherOverlayPoint[], activeLayerId: Weat
 function WeatherHeatLayer({
   activeLayerId,
   points,
+  zoom,
 }: {
   activeLayerId: WeatherLayerId;
   points: WeatherOverlayPoint[];
+  zoom: number;
 }) {
-  const heatPoints = getWeatherHeatPoints(points, activeLayerId);
+  const heatPoints = getWeatherHeatPoints(points, activeLayerId, zoom);
 
   if (heatPoints.length === 0) {
     return null;
@@ -625,6 +635,7 @@ export function WorldMap({
   const canShowSelectedMarker = visibleSelectedMarkerCoordinates !== null;
   const shouldLimitOverlayMarkers =
     isCompactViewport && mapPosition.zoom < COMPACT_OVERLAY_ZOOM_THRESHOLD;
+  const overlayMarkerScale = getOverlayMarkerScale(mapPosition.zoom);
   const visibleWeatherOverlayPoints = shouldLimitOverlayMarkers
     ? weatherOverlayPoints.slice(0, MOBILE_VISIBLE_OVERLAY_COUNT)
     : weatherOverlayPoints;
@@ -780,11 +791,12 @@ export function WorldMap({
                         aria-hidden={isWrappedCopy}
                         style={{ pointerEvents: isWrappedCopy ? "none" : "auto" }}
                       >
-                        <WeatherHeatLayer activeLayerId={activeLayerId} points={visibleWeatherOverlayPoints} />
+                        <WeatherHeatLayer activeLayerId={activeLayerId} points={visibleWeatherOverlayPoints} zoom={mapPosition.zoom} />
                         {visibleWeatherOverlayPoints.map((point) => (
                           <WeatherOverlayMarker
                             key={`${offsetX}-${point.id}`}
                             point={point}
+                            scale={overlayMarkerScale}
                             visualOnly={isWrappedCopy}
                             onSelectPoint={handleSelectWeatherOverlayPoint}
                           />
