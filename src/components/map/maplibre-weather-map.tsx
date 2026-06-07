@@ -18,7 +18,6 @@ const WEATHER_SOURCE_ID = "weather-overlay-points";
 const SELECTED_SOURCE_ID = "selected-weather-location";
 const WEATHER_HEAT_LAYER_ID = "weather-heat-layer";
 const WEATHER_DOT_LAYER_ID = "weather-point-dot-layer";
-const WEATHER_LABEL_LAYER_ID = "weather-point-label-layer";
 const WEATHER_HIT_LAYER_ID = "weather-point-hit-layer";
 const SELECTED_DOT_LAYER_ID = "selected-weather-dot-layer";
 
@@ -199,7 +198,7 @@ function getFeaturePointId(feature: MapGeoJSONFeature) {
 function setOverlayLayerVisibility(map: MapLibreMap, isVisible: boolean) {
   const visibility = isVisible ? "visible" : "none";
 
-  [WEATHER_HEAT_LAYER_ID, WEATHER_DOT_LAYER_ID, WEATHER_LABEL_LAYER_ID, WEATHER_HIT_LAYER_ID].forEach((layerId) => {
+  [WEATHER_HEAT_LAYER_ID, WEATHER_DOT_LAYER_ID, WEATHER_HIT_LAYER_ID].forEach((layerId) => {
     if (map.getLayer(layerId)) {
       map.setLayoutProperty(layerId, "visibility", visibility);
     }
@@ -280,27 +279,6 @@ function addWeatherLayers(map: MapLibreMap) {
         "circle-stroke-color": "rgba(255,255,255,0.88)",
         "circle-stroke-width": 1,
         "circle-opacity": 0.92,
-      },
-    });
-  }
-
-  if (!map.getLayer(WEATHER_LABEL_LAYER_ID)) {
-    map.addLayer({
-      id: WEATHER_LABEL_LAYER_ID,
-      type: "symbol",
-      source: WEATHER_SOURCE_ID,
-      minzoom: 3,
-      layout: {
-        "text-field": ["concat", ["to-string", ["get", "temperature"]], "\u00b0"],
-        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 3, 10, 8, 13],
-        "text-offset": [0, 1.05],
-        "text-allow-overlap": false,
-      },
-      paint: {
-        "text-color": "#111827",
-        "text-halo-color": "rgba(255,255,255,0.92)",
-        "text-halo-width": 1.4,
       },
     });
   }
