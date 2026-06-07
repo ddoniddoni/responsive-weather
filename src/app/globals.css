@@ -42,6 +42,11 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.maplibre-weather-map .maplibregl-map,
+.maplibre-weather-map .maplibregl-canvas {
+  background: transparent;
+}
+
 .theme-toggle-button {
   display: inline-flex;
   height: 44px;

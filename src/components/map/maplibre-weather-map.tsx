@@ -7,7 +7,7 @@ import maplibregl, {
   type Map as MapLibreMap,
   type StyleSpecification,
 } from "maplibre-gl";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { WeatherLayerId } from "@/types/weather-layer";
 import type { SelectedCountry, WeatherOverlayPoint } from "@/types/weather-data";
@@ -20,6 +20,17 @@ const WEATHER_HEAT_LAYER_ID = "weather-heat-layer";
 const WEATHER_DOT_LAYER_ID = "weather-point-dot-layer";
 const WEATHER_HIT_LAYER_ID = "weather-point-hit-layer";
 const SELECTED_DOT_LAYER_ID = "selected-weather-dot-layer";
+const FALLBACK_TILES = [
+  { id: "3-5-2", x: 0, y: 0, src: "https://a.basemaps.cartocdn.com/light_all/3/5/2.png" },
+  { id: "3-6-2", x: 1, y: 0, src: "https://a.basemaps.cartocdn.com/light_all/3/6/2.png" },
+  { id: "3-7-2", x: 2, y: 0, src: "https://a.basemaps.cartocdn.com/light_all/3/7/2.png" },
+  { id: "3-5-3", x: 0, y: 1, src: "https://a.basemaps.cartocdn.com/light_all/3/5/3.png" },
+  { id: "3-6-3", x: 1, y: 1, src: "https://a.basemaps.cartocdn.com/light_all/3/6/3.png" },
+  { id: "3-7-3", x: 2, y: 1, src: "https://a.basemaps.cartocdn.com/light_all/3/7/3.png" },
+  { id: "3-5-4", x: 0, y: 2, src: "https://a.basemaps.cartocdn.com/light_all/3/5/4.png" },
+  { id: "3-6-4", x: 1, y: 2, src: "https://a.basemaps.cartocdn.com/light_all/3/6/4.png" },
+  { id: "3-7-4", x: 2, y: 2, src: "https://a.basemaps.cartocdn.com/light_all/3/7/4.png" },
+];
 
 type MapLibreWeatherMapProps = {
   activeLayerId?: WeatherLayerId;
@@ -57,23 +68,27 @@ type SelectedFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Point, Select
 const MAP_STYLE: StyleSpecification = {
   version: 8,
   sources: {
-    osm: {
+    carto: {
       type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tiles: [
+        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+      ],
       tileSize: 256,
-      attribution: "&copy; OpenStreetMap contributors",
+      attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
     },
   },
   layers: [
     {
-      id: "osm-raster",
+      id: "carto-raster",
       type: "raster",
-      source: "osm",
+      source: "carto",
       paint: {
-        "raster-saturation": -0.18,
-        "raster-contrast": 0.12,
-        "raster-brightness-min": 0.08,
-        "raster-brightness-max": 0.94,
+        "raster-saturation": -0.1,
+        "raster-contrast": 0.08,
+        "raster-brightness-min": 0.05,
+        "raster-brightness-max": 0.98,
       },
     },
   ],
@@ -310,6 +325,26 @@ function addWeatherLayers(map: MapLibreMap) {
   }
 }
 
+function StaticTileBackdrop() {
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden bg-[#dfe8eb]" aria-hidden="true">
+      <div className="absolute left-1/2 top-1/2 h-[768px] w-[768px] -translate-x-1/2 -translate-y-1/2 scale-[1.55] opacity-95 md:scale-[1.9]">
+        {FALLBACK_TILES.map((tile) => (
+          <div
+            key={tile.id}
+            className="absolute h-64 w-64 select-none bg-cover bg-center"
+            style={{
+              left: tile.x * 256,
+              top: tile.y * 256,
+              backgroundImage: `url(${tile.src})`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function MapLibreWeatherMap({
   activeLayerId = "temperature",
   selectedCountryCode,
@@ -326,6 +361,8 @@ export function MapLibreWeatherMap({
 }: MapLibreWeatherMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [mapErrorMessage, setMapErrorMessage] = useState<string | null>(null);
   const pointsRef = useRef<WeatherOverlayPoint[]>(weatherOverlayPoints);
   const weatherFeatureCollectionRef = useRef<OverlayFeatureCollection>(
     buildWeatherFeatureCollection(weatherOverlayPoints, activeLayerId),
@@ -374,18 +411,35 @@ export function MapLibreWeatherMap({
       return;
     }
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: MAP_STYLE,
-      center: DEFAULT_CENTER,
-      zoom: DEFAULT_ZOOM,
-      attributionControl: false,
-    });
+    let map: MapLibreMap;
+
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: MAP_STYLE,
+        center: DEFAULT_CENTER,
+        zoom: DEFAULT_ZOOM,
+        attributionControl: false,
+      });
+    } catch (error) {
+      window.setTimeout(() => {
+        setMapStatus("error");
+        setMapErrorMessage(error instanceof Error ? error.message : "Map could not be initialized.");
+      }, 0);
+      return;
+    }
 
     mapRef.current = map;
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
+    map.on("error", (event) => {
+      setMapStatus("error");
+      setMapErrorMessage(event.error?.message ?? "Map tiles could not be loaded.");
+    });
+
     map.on("load", () => {
+      setMapStatus("ready");
+      setMapErrorMessage(null);
       addWeatherLayers(map);
       const weatherSource = map.getSource(WEATHER_SOURCE_ID) as GeoJSONSource | undefined;
       const selectedSource = map.getSource(SELECTED_SOURCE_ID) as GeoJSONSource | undefined;
@@ -462,8 +516,15 @@ export function MapLibreWeatherMap({
       className="maplibre-weather-map relative h-full min-h-[720px] min-w-0 overflow-hidden bg-slate-200 dark:bg-slate-950"
       aria-label="Interactive weather map"
     >
-      <div ref={containerRef} className="absolute inset-0" />
+      <StaticTileBackdrop />
+      <div ref={containerRef} className="absolute inset-0 z-10" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.18),transparent_18%,transparent_78%,rgba(15,23,42,0.2))]" />
+
+      {mapStatus !== "ready" ? (
+        <div className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100">
+          {mapStatus === "loading" ? "Loading map..." : `Map fallback active${mapErrorMessage ? `: ${mapErrorMessage}` : "."}`}
+        </div>
+      ) : null}
 
       {onToggleWeatherOverlay ? (
         <div className="absolute right-3 top-48 z-20 flex flex-wrap justify-end gap-2 md:top-24">
