@@ -7,7 +7,7 @@ import { MapTopBar } from "@/components/dashboard/map-top-bar";
 import { MobileWeatherSheet } from "@/components/dashboard/mobile-weather-sheet";
 import { WeatherLayerRail } from "@/components/dashboard/weather-layer-rail";
 import { WeatherScaleLegend } from "@/components/dashboard/weather-scale-legend";
-import { WorldMap } from "@/components/map/world-map";
+import { MapLibreWeatherMap } from "@/components/map/maplibre-weather-map";
 import { WeatherDetailPanel } from "@/components/weather/weather-detail-panel";
 import { SEARCHABLE_LOCATIONS, type SearchableLocation } from "@/constants/searchable-locations";
 import { FORECAST_TIMES, WEATHER_LAYERS } from "@/constants/weather-layers";
@@ -136,12 +136,6 @@ export function WeatherDashboard() {
     setIsMobileWeatherOpen(true);
   }
 
-  function handleSelectRegion(region: SelectedRegion) {
-    setSelectedRegion(region);
-    setSelectedOverlayPoint(null);
-    setIsMobileWeatherOpen(true);
-  }
-
   function handleSelectSearchLocation(location: SearchableLocation) {
     handleSelectCountry({
       code: location.code,
@@ -176,20 +170,16 @@ export function WeatherDashboard() {
         isDark ? "bg-slate-950 text-slate-100" : "bg-slate-100 text-slate-950"
       }`}
     >
-      <WorldMap
+      <MapLibreWeatherMap
         activeLayerId={activeLayer.id}
         selectedCountryCode={selectedCountry?.code ?? null}
         selectedCountryName={selectedCountry?.name ?? null}
         selectedCountryCoordinates={selectedCountry?.coordinates ?? null}
-        selectedRegionCode={selectedRegion?.regionCode ?? null}
-        selectedWeatherCondition={weather?.condition ?? null}
         weatherOverlayPoints={weatherOverlay.points}
         isWeatherOverlayVisible={isWeatherOverlayVisible}
         isWeatherOverlayLoading={weatherOverlay.loadStatus === "loading"}
         weatherOverlayStatusLabel={visibleWeatherOverlayStatusLabel}
-        variant="immersive"
         onSelectCountry={handleSelectCountry}
-        onSelectRegion={handleSelectRegion}
         onSelectWeatherOverlayPoint={handleSelectWeatherOverlayPoint}
         onRefreshWeatherOverlay={weatherOverlay.refresh}
         onToggleWeatherOverlay={() => setIsWeatherOverlayVisible((isVisible) => !isVisible)}
