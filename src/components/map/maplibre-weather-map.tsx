@@ -21,64 +21,64 @@ const WEATHER_DOT_LAYER_ID = "weather-point-dot-layer";
 const WEATHER_HIT_LAYER_ID = "weather-point-hit-layer";
 const SELECTED_DOT_LAYER_ID = "selected-weather-dot-layer";
 const BASEMAP_TILE_URLS = [
-  "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png",
-  "https://b.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png",
-  "https://c.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png",
+  "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+  "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+  "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
 ];
 const FALLBACK_TILES = [
   {
     id: "3-5-2",
     x: 0,
     y: 0,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/5/2@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/5/2@2x.png",
   },
   {
     id: "3-6-2",
     x: 1,
     y: 0,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/6/2@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/6/2@2x.png",
   },
   {
     id: "3-7-2",
     x: 2,
     y: 0,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/7/2@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/7/2@2x.png",
   },
   {
     id: "3-5-3",
     x: 0,
     y: 1,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/5/3@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/5/3@2x.png",
   },
   {
     id: "3-6-3",
     x: 1,
     y: 1,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/6/3@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/6/3@2x.png",
   },
   {
     id: "3-7-3",
     x: 2,
     y: 1,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/7/3@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/7/3@2x.png",
   },
   {
     id: "3-5-4",
     x: 0,
     y: 2,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/5/4@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/5/4@2x.png",
   },
   {
     id: "3-6-4",
     x: 1,
     y: 2,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/6/4@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/6/4@2x.png",
   },
   {
     id: "3-7-4",
     x: 2,
     y: 2,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/7/4@2x.png",
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/7/4@2x.png",
   },
 ];
 
@@ -131,10 +131,10 @@ const MAP_STYLE: StyleSpecification = {
       type: "raster",
       source: "carto",
       paint: {
-        "raster-saturation": 0.12,
-        "raster-contrast": 0.12,
+        "raster-saturation": 0.18,
+        "raster-contrast": 0.32,
         "raster-brightness-min": 0,
-        "raster-brightness-max": 1,
+        "raster-brightness-max": 0.96,
       },
     },
   ],
@@ -299,10 +299,10 @@ function addWeatherLayers(map: MapLibreMap) {
       source: WEATHER_SOURCE_ID,
       maxzoom: 9,
       paint: {
-        "heatmap-weight": ["interpolate", ["linear"], ["get", "value"], 0, 0.08, 1, 0.85],
-        "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 2, 0.8, 8, 1.7],
-        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 2, 22, 6, 54, 9, 86],
-        "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 2, 0.78, 8, 0.38],
+        "heatmap-weight": ["interpolate", ["linear"], ["get", "value"], 0, 0.06, 1, 0.7],
+        "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 2, 0.52, 8, 1.08],
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 2, 14, 6, 32, 9, 48],
+        "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 2, 0.42, 8, 0.22],
         "heatmap-color": [
           "interpolate",
           ["linear"],
@@ -310,15 +310,15 @@ function addWeatherLayers(map: MapLibreMap) {
           0,
           "rgba(14, 165, 233, 0)",
           0.18,
-          "rgba(14, 165, 233, 0.32)",
+          "rgba(14, 165, 233, 0.18)",
           0.36,
-          "rgba(34, 197, 94, 0.42)",
+          "rgba(34, 197, 94, 0.24)",
           0.58,
-          "rgba(250, 204, 21, 0.5)",
+          "rgba(250, 204, 21, 0.3)",
           0.78,
-          "rgba(249, 115, 22, 0.58)",
+          "rgba(249, 115, 22, 0.34)",
           1,
-          "rgba(220, 38, 38, 0.62)",
+          "rgba(220, 38, 38, 0.38)",
         ],
       },
     });
@@ -600,7 +600,7 @@ export function MapLibreWeatherMap({
     >
       <StaticTileBackdrop />
       <div ref={containerRef} className="absolute inset-0 z-10 h-full w-full" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.18),transparent_18%,transparent_78%,rgba(15,23,42,0.2))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04),transparent_14%,transparent_84%,rgba(15,23,42,0.06))]" />
 
       {mapStatus !== "ready" ? (
         <div className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100">
