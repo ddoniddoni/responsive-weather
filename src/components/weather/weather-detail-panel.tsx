@@ -50,7 +50,7 @@ function getSourceLabel(sourceLabel: string) {
 export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose }: WeatherDetailPanelProps) {
   const isOverlay = variant === "overlay";
   const panelClassName = isOverlay
-    ? "max-h-full overflow-y-auto rounded-lg border border-white/70 bg-white/95 p-4 shadow-2xl shadow-slate-950/20 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/92"
+    ? "max-h-full overflow-hidden rounded-lg border border-white/70 bg-white/95 p-3 shadow-2xl shadow-slate-950/20 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/92"
     : "rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950";
 
   if (!weather) {
@@ -103,8 +103,10 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
             Weather detail
           </p>
-          <h2 className="mt-1 truncate text-xl font-bold text-slate-950 dark:text-slate-100">{title}</h2>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <h2 className={`${isOverlay ? "text-lg" : "text-xl"} mt-1 truncate font-bold text-slate-950 dark:text-slate-100`}>
+            {title}
+          </h2>
+          <div className={`${isOverlay ? "mt-1" : "mt-2"} flex flex-wrap items-center gap-2`}>
             <p className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">{subtitle}</p>
             <span className="inline-flex min-h-5 items-center rounded border border-slate-200 bg-slate-50 px-1.5 text-[10px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
               {sourceLabel}
@@ -127,13 +129,17 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
           ) : null}
         </div>
       </div>
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/70">
+      <div
+        className={`${isOverlay ? "mt-3 p-2.5" : "mt-4 p-3"} rounded-lg border border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/70`}
+      >
         <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
               Current
             </p>
-            <p className="mt-1 font-mono text-5xl font-semibold leading-none tracking-normal text-slate-950 dark:text-white">
+            <p
+              className={`${isOverlay ? "text-4xl" : "text-5xl"} mt-1 font-mono font-semibold leading-none tracking-normal text-slate-950 dark:text-white`}
+            >
               {temperatureText}
             </p>
           </div>
@@ -142,15 +148,17 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
             <p className="mt-1 font-mono text-sm font-bold text-slate-900 dark:text-slate-100">{updatedAt}</p>
           </div>
         </div>
-        <p className="mt-3 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
+        <p
+          className={`${isOverlay ? "mt-2 line-clamp-2 leading-5" : "mt-3 leading-6"} break-words text-sm text-slate-600 dark:text-slate-300`}
+        >
           {weather.description}
         </p>
       </div>
-      <div className="mt-3">
-        <WeatherInsightStrip insights={insights} />
+      <div className={isOverlay ? "mt-2" : "mt-3"}>
+        <WeatherInsightStrip insights={insights} density={isOverlay ? "compact" : "default"} />
       </div>
       <dl
-        className={`mt-3 grid grid-cols-1 gap-2 text-sm ${
+        className={`${isOverlay ? "mt-2 gap-1.5" : "mt-3 gap-2"} grid grid-cols-1 text-sm ${
           isOverlay ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
         }`}
       >
@@ -162,6 +170,7 @@ export function WeatherDetailPanel({ weather, theme, variant = "panel", onClose 
             value={metricCard.value}
             helperText={metricCard.helperText}
             theme={theme}
+            density={isOverlay ? "compact" : "default"}
           />
         ))}
       </dl>
