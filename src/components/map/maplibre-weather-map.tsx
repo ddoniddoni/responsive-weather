@@ -15,7 +15,7 @@ import type { SelectedCountry, WeatherOverlayPoint } from "@/types/weather-data"
 
 const DEFAULT_CENTER: [number, number] = [127.335, 35.815];
 const DEFAULT_ZOOM = 3.6;
-const MIN_ZOOM = 2.25;
+const MIN_ZOOM = 2.8;
 const MAX_ZOOM = 7.5;
 const WEATHER_MAP_BOUNDS: LngLatBoundsLike = [
   [-180, -58],
@@ -31,62 +31,6 @@ const BASEMAP_TILE_URLS = [
   "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
   "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
   "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-];
-const FALLBACK_TILES = [
-  {
-    id: "3-5-2",
-    x: 0,
-    y: 0,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/5/2@2x.png",
-  },
-  {
-    id: "3-6-2",
-    x: 1,
-    y: 0,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/6/2@2x.png",
-  },
-  {
-    id: "3-7-2",
-    x: 2,
-    y: 0,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/7/2@2x.png",
-  },
-  {
-    id: "3-5-3",
-    x: 0,
-    y: 1,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/5/3@2x.png",
-  },
-  {
-    id: "3-6-3",
-    x: 1,
-    y: 1,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/6/3@2x.png",
-  },
-  {
-    id: "3-7-3",
-    x: 2,
-    y: 1,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/7/3@2x.png",
-  },
-  {
-    id: "3-5-4",
-    x: 0,
-    y: 2,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/5/4@2x.png",
-  },
-  {
-    id: "3-6-4",
-    x: 1,
-    y: 2,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/6/4@2x.png",
-  },
-  {
-    id: "3-7-4",
-    x: 2,
-    y: 2,
-    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager/3/7/4@2x.png",
-  },
 ];
 
 type MapLibreWeatherMapProps = {
@@ -129,6 +73,7 @@ const MAP_STYLE: StyleSpecification = {
       type: "raster",
       tiles: BASEMAP_TILE_URLS,
       tileSize: 512,
+      bounds: [-180, -85, 180, 85],
       attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
     },
   },
@@ -389,26 +334,6 @@ function addWeatherLayers(map: MapLibreMap) {
   }
 }
 
-function StaticTileBackdrop() {
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden bg-[#c9dce3]" aria-hidden="true">
-      <div className="absolute left-1/2 top-1/2 h-[768px] w-[768px] -translate-x-1/2 -translate-y-1/2 scale-[1.08] opacity-95 md:scale-[1.28]">
-        {FALLBACK_TILES.map((tile) => (
-          <div
-            key={tile.id}
-            className="absolute h-64 w-64 select-none bg-cover bg-center [image-rendering:auto]"
-            style={{
-              left: tile.x * 256,
-              top: tile.y * 256,
-              backgroundImage: `url(${tile.src})`,
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function MapLibreWeatherMap({
   activeLayerId = "temperature",
   selectedCountryCode,
@@ -617,7 +542,6 @@ export function MapLibreWeatherMap({
       className="maplibre-weather-map absolute inset-0 h-full min-h-full w-full min-w-0 overflow-hidden bg-slate-200 dark:bg-slate-950"
       aria-label="Interactive weather map"
     >
-      <StaticTileBackdrop />
       <div ref={containerRef} className="absolute inset-0 z-10 h-full w-full" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04),transparent_14%,transparent_84%,rgba(15,23,42,0.06))]" />
 
