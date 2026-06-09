@@ -20,16 +20,66 @@ const WEATHER_HEAT_LAYER_ID = "weather-heat-layer";
 const WEATHER_DOT_LAYER_ID = "weather-point-dot-layer";
 const WEATHER_HIT_LAYER_ID = "weather-point-hit-layer";
 const SELECTED_DOT_LAYER_ID = "selected-weather-dot-layer";
+const BASEMAP_TILE_URLS = [
+  "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png",
+  "https://b.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png",
+  "https://c.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png",
+];
 const FALLBACK_TILES = [
-  { id: "3-5-2", x: 0, y: 0, src: "https://a.basemaps.cartocdn.com/light_all/3/5/2.png" },
-  { id: "3-6-2", x: 1, y: 0, src: "https://a.basemaps.cartocdn.com/light_all/3/6/2.png" },
-  { id: "3-7-2", x: 2, y: 0, src: "https://a.basemaps.cartocdn.com/light_all/3/7/2.png" },
-  { id: "3-5-3", x: 0, y: 1, src: "https://a.basemaps.cartocdn.com/light_all/3/5/3.png" },
-  { id: "3-6-3", x: 1, y: 1, src: "https://a.basemaps.cartocdn.com/light_all/3/6/3.png" },
-  { id: "3-7-3", x: 2, y: 1, src: "https://a.basemaps.cartocdn.com/light_all/3/7/3.png" },
-  { id: "3-5-4", x: 0, y: 2, src: "https://a.basemaps.cartocdn.com/light_all/3/5/4.png" },
-  { id: "3-6-4", x: 1, y: 2, src: "https://a.basemaps.cartocdn.com/light_all/3/6/4.png" },
-  { id: "3-7-4", x: 2, y: 2, src: "https://a.basemaps.cartocdn.com/light_all/3/7/4.png" },
+  {
+    id: "3-5-2",
+    x: 0,
+    y: 0,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/5/2@2x.png",
+  },
+  {
+    id: "3-6-2",
+    x: 1,
+    y: 0,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/6/2@2x.png",
+  },
+  {
+    id: "3-7-2",
+    x: 2,
+    y: 0,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/7/2@2x.png",
+  },
+  {
+    id: "3-5-3",
+    x: 0,
+    y: 1,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/5/3@2x.png",
+  },
+  {
+    id: "3-6-3",
+    x: 1,
+    y: 1,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/6/3@2x.png",
+  },
+  {
+    id: "3-7-3",
+    x: 2,
+    y: 1,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/7/3@2x.png",
+  },
+  {
+    id: "3-5-4",
+    x: 0,
+    y: 2,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/5/4@2x.png",
+  },
+  {
+    id: "3-6-4",
+    x: 1,
+    y: 2,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/6/4@2x.png",
+  },
+  {
+    id: "3-7-4",
+    x: 2,
+    y: 2,
+    src: "https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/3/7/4@2x.png",
+  },
 ];
 
 type MapLibreWeatherMapProps = {
@@ -70,12 +120,8 @@ const MAP_STYLE: StyleSpecification = {
   sources: {
     carto: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
+      tiles: BASEMAP_TILE_URLS,
+      tileSize: 512,
       attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
     },
   },
@@ -85,10 +131,10 @@ const MAP_STYLE: StyleSpecification = {
       type: "raster",
       source: "carto",
       paint: {
-        "raster-saturation": -0.1,
-        "raster-contrast": 0.08,
-        "raster-brightness-min": 0.05,
-        "raster-brightness-max": 0.98,
+        "raster-saturation": 0.12,
+        "raster-contrast": 0.12,
+        "raster-brightness-min": 0,
+        "raster-brightness-max": 1,
       },
     },
   ],
@@ -327,12 +373,12 @@ function addWeatherLayers(map: MapLibreMap) {
 
 function StaticTileBackdrop() {
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden bg-[#dfe8eb]" aria-hidden="true">
-      <div className="absolute left-1/2 top-1/2 h-[768px] w-[768px] -translate-x-1/2 -translate-y-1/2 scale-[1.55] opacity-95 md:scale-[1.9]">
+    <div className="absolute inset-0 z-0 overflow-hidden bg-[#c9dce3]" aria-hidden="true">
+      <div className="absolute left-1/2 top-1/2 h-[768px] w-[768px] -translate-x-1/2 -translate-y-1/2 scale-[1.08] opacity-95 md:scale-[1.28]">
         {FALLBACK_TILES.map((tile) => (
           <div
             key={tile.id}
-            className="absolute h-64 w-64 select-none bg-cover bg-center"
+            className="absolute h-64 w-64 select-none bg-cover bg-center [image-rendering:auto]"
             style={{
               left: tile.x * 256,
               top: tile.y * 256,
