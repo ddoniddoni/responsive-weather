@@ -5,10 +5,12 @@ import maplibregl, {
   type MapGeoJSONFeature,
   type MapLayerMouseEvent,
   type Map as MapLibreMap,
+  type Marker as MapLibreMarker,
   type StyleSpecification,
 } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import type { SearchableLocation } from "@/constants/searchable-locations";
 import type { WeatherLayerId } from "@/types/weather-layer";
 import type { SelectedCountry, WeatherOverlayPoint } from "@/types/weather-data";
 
@@ -90,6 +92,7 @@ type MapLibreWeatherMapProps = {
   weatherOverlayPoints?: WeatherOverlayPoint[];
   isWeatherOverlayVisible?: boolean;
   isWeatherOverlayLoading?: boolean;
+  selectableLocations?: SearchableLocation[];
   weatherOverlayStatusLabel?: string | null;
   onSelectCountry: (country: SelectedCountry) => void;
   onSelectWeatherOverlayPoint?: (point: WeatherOverlayPoint) => void;
@@ -277,6 +280,27 @@ function configureMapInteractions(map: MapLibreMap) {
   map.touchZoomRotate.disableRotation();
 }
 
+function createLocationMarkerElement(
+  location: SearchableLocation,
+  isSelected: boolean,
+  onSelectLocation: (location: SearchableLocation) => void,
+) {
+  const markerButton = document.createElement("button");
+  markerButton.type = "button";
+  markerButton.className = `maplibre-location-marker${isSelected ? " is-selected" : ""}`;
+  markerButton.setAttribute("aria-label", `Select ${location.name}`);
+  markerButton.innerHTML = `<span class="maplibre-location-marker-dot" aria-hidden="true"></span><span class="maplibre-location-marker-label">${location.name}</span>`;
+  markerButton.addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+  });
+  markerButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    onSelectLocation(location);
+  });
+
+  return markerButton;
+}
+
 function addWeatherLayers(map: MapLibreMap) {
   if (!map.getSource(WEATHER_SOURCE_ID)) {
     map.addSource(WEATHER_SOURCE_ID, {
@@ -410,6 +434,7 @@ export function MapLibreWeatherMap({
   weatherOverlayPoints = [],
   isWeatherOverlayVisible = false,
   isWeatherOverlayLoading = false,
+  selectableLocations = [],
   weatherOverlayStatusLabel = null,
   onSelectCountry,
   onSelectWeatherOverlayPoint,
@@ -430,6 +455,7 @@ export function MapLibreWeatherMap({
   const isWeatherOverlayVisibleRef = useRef(isWeatherOverlayVisible);
   const onSelectCountryRef = useRef(onSelectCountry);
   const onSelectWeatherOverlayPointRef = useRef(onSelectWeatherOverlayPoint);
+  const locationMarkersRef = useRef<MapLibreMarker[]>([]);
   const weatherFeatureCollection = useMemo(
     () => buildWeatherFeatureCollection(weatherOverlayPoints, activeLayerId),
     [activeLayerId, weatherOverlayPoints],
@@ -462,6 +488,45 @@ export function MapLibreWeatherMap({
   useEffect(() => {
     onSelectWeatherOverlayPointRef.current = onSelectWeatherOverlayPoint;
   }, [onSelectWeatherOverlayPoint]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || mapStatus !== "ready") {
+      return;
+    }
+
+    locationMarkersRef.current.forEach((marker) => marker.remove());
+    locationMarkersRef.current = selectableLocations.map((location) => {
+      const isSelected = selectedCountryCode === location.code;
+      const markerElement = createLocationMarkerElement(location, isSelected, (selectedLocation) => {
+        const selectedCountry: SelectedCountry = {
+          code: selectedLocation.code,
+          name: selectedLocation.name,
+          coordinates: selectedLocation.coordinates,
+        };
+
+        map.flyTo({
+          center: selectedLocation.coordinates,
+          zoom: Math.max(map.getZoom(), 4.8),
+          essential: true,
+        });
+        onSelectCountryRef.current(selectedCountry);
+      });
+
+      return new maplibregl.Marker({
+        element: markerElement,
+        anchor: "center",
+      })
+        .setLngLat(location.coordinates)
+        .addTo(map);
+    });
+
+    return () => {
+      locationMarkersRef.current.forEach((marker) => marker.remove());
+      locationMarkersRef.current = [];
+    };
+  }, [mapStatus, selectableLocations, selectedCountryCode]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -561,6 +626,8 @@ export function MapLibreWeatherMap({
         window.cancelAnimationFrame(resizeFrameId);
       }
 
+      locationMarkersRef.current.forEach((marker) => marker.remove());
+      locationMarkersRef.current = [];
       resizeObserver?.disconnect();
       map.remove();
       mapRef.current = null;

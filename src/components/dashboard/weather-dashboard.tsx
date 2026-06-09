@@ -178,6 +178,7 @@ export function WeatherDashboard() {
         weatherOverlayPoints={weatherOverlay.points}
         isWeatherOverlayVisible={isWeatherOverlayVisible}
         isWeatherOverlayLoading={weatherOverlay.loadStatus === "loading"}
+        selectableLocations={SEARCHABLE_LOCATIONS}
         weatherOverlayStatusLabel={visibleWeatherOverlayStatusLabel}
         onSelectCountry={handleSelectCountry}
         onSelectWeatherOverlayPoint={handleSelectWeatherOverlayPoint}
