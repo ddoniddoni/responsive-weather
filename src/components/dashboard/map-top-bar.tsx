@@ -52,7 +52,7 @@ export function MapTopBar({
   onSelectSearchLocation,
   onToggleTheme,
 }: MapTopBarProps) {
-  const themeLabel = isDark ? "light" : "dark";
+  const themeLabel = isDark ? "라이트" : "다크";
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [highlightedResultIndex, setHighlightedResultIndex] = useState(0);
   const filteredLocations = useMemo(() => {
@@ -75,8 +75,8 @@ export function MapTopBar({
   const selectedLocation = searchLocations.find((location) => location.name === selectedLabel);
   const searchStatusLabel =
     filteredLocations.length > 0
-      ? `${filteredLocations.length} locations`
-      : "No matching locations";
+      ? `${filteredLocations.length}개 위치`
+      : "검색 결과 없음";
 
   function handleSelectLocation(location: SearchableLocation) {
     onSelectSearchLocation(location);
@@ -143,12 +143,12 @@ export function MapTopBar({
           </div>
           <button
             type="button"
-            aria-label={`Switch to ${themeLabel} mode`}
+            aria-label={`${themeLabel} 모드로 전환`}
             onClick={onToggleTheme}
             className="theme-toggle-button md:hidden"
           >
             <ThemeToggleIcon isDark={isDark} />
-            <span className="sr-only">Switch to {themeLabel} mode</span>
+            <span className="sr-only">{themeLabel} 모드로 전환</span>
           </button>
         </div>
         <div className="pointer-events-auto relative w-full min-w-0 max-w-full flex-1 md:max-w-[460px]">
@@ -156,12 +156,12 @@ export function MapTopBar({
             <span aria-hidden="true" className="font-mono text-base text-slate-400">
               /
             </span>
-            <span className="sr-only">Search locations</span>
+            <span className="sr-only">위치 검색</span>
             <input
               type="search"
               value={searchValue}
               placeholder={selectedLabel}
-              aria-label="Search locations"
+              aria-label="위치 검색"
               onChange={(event) => {
                 handleSearchChange(event.target.value);
               }}
@@ -175,7 +175,7 @@ export function MapTopBar({
             {searchValue ? (
               <button
                 type="button"
-                aria-label="Clear search"
+                aria-label="검색어 지우기"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={handleClearSearch}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
@@ -184,14 +184,14 @@ export function MapTopBar({
               </button>
             ) : null}
             <span className="ml-auto rounded bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white dark:bg-white dark:text-slate-950">
-              Locate
+              검색
             </span>
           </label>
           {isSearchOpen ? (
             <div className="absolute left-0 right-0 top-[calc(100%+0.375rem)] max-h-64 overflow-y-auto rounded-md border border-white/75 bg-white/96 p-1.5 text-sm shadow-xl shadow-slate-950/18 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/94">
               <div className="flex items-center justify-between gap-3 px-2.5 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <span className="min-w-0 truncate">
-                  {selectedLocation ? `Selected: ${selectedLocation.name}` : "Choose a location"}
+                  {selectedLocation ? `선택됨: ${selectedLocation.name}` : "위치를 선택하세요"}
                 </span>
                 <span className="shrink-0 rounded bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                   {searchStatusLabel}
@@ -241,7 +241,7 @@ export function MapTopBar({
                 </div>
               ) : (
                 <div role="status" className="px-3 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
-                  This MVP currently supports South Korea, United States, Japan, and France.
+                  현재 MVP는 대한민국, 미국, 일본, 프랑스를 지원합니다.
                 </div>
               )}
             </div>
@@ -251,12 +251,12 @@ export function MapTopBar({
       <div className="pointer-events-auto hidden items-center gap-2 self-start md:flex md:self-auto">
         <button
           type="button"
-          aria-label={`Switch to ${themeLabel} mode`}
+          aria-label={`${themeLabel} 모드로 전환`}
           onClick={onToggleTheme}
           className="theme-toggle-button"
         >
           <ThemeToggleIcon isDark={isDark} />
-          <span className="sr-only">Switch to {themeLabel} mode</span>
+          <span className="sr-only">{themeLabel} 모드로 전환</span>
         </button>
       </div>
     </header>

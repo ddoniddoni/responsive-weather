@@ -17,7 +17,7 @@ const jetBrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Responsive Weather",
-  description: "Interactive weather map for global and regional condition previews.",
+  description: "세계와 지역 날씨를 지도에서 확인하는 반응형 날씨 대시보드입니다.",
 };
 
 export default function RootLayout({

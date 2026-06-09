@@ -120,13 +120,13 @@ function normalizeOpenMeteoOverlayPoint(
 
 function getOpenMeteoDescription(label: string, condition: WeatherCondition) {
   const descriptionMap: Record<WeatherCondition, string> = {
-    sunny: `${label} is reporting clear realtime conditions from Open-Meteo.`,
-    rainy: `${label} is reporting wet realtime conditions from Open-Meteo.`,
-    cloudy: `${label} is reporting layered cloud cover from Open-Meteo.`,
-    snowy: `${label} is reporting wintry realtime conditions from Open-Meteo.`,
-    stormy: `${label} is reporting storm-prone realtime conditions from Open-Meteo.`,
-    foggy: `${label} is reporting reduced visibility conditions from Open-Meteo.`,
-    unknown: `${label} realtime weather is available, but the condition is not classified yet.`,
+    sunny: `${label}은 Open-Meteo 기준 맑은 실시간 상태입니다.`,
+    rainy: `${label}은 Open-Meteo 기준 비가 오는 실시간 상태입니다.`,
+    cloudy: `${label}은 Open-Meteo 기준 구름이 많은 상태입니다.`,
+    snowy: `${label}은 Open-Meteo 기준 눈이 오는 겨울철 상태입니다.`,
+    stormy: `${label}은 Open-Meteo 기준 폭풍 가능성이 있는 상태입니다.`,
+    foggy: `${label}은 Open-Meteo 기준 시야가 낮은 안개 상태입니다.`,
+    unknown: `${label}의 실시간 날씨는 확인됐지만 상태 분류가 아직 명확하지 않습니다.`,
   };
 
   return descriptionMap[condition];

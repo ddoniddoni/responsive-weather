@@ -288,7 +288,7 @@ function createLocationMarkerElement(
   const markerButton = document.createElement("button");
   markerButton.type = "button";
   markerButton.className = `maplibre-location-marker${isSelected ? " is-selected" : ""}`;
-  markerButton.setAttribute("aria-label", `Select ${location.name}`);
+  markerButton.setAttribute("aria-label", `${location.name} 선택`);
   markerButton.innerHTML = `<span class="maplibre-location-marker-dot" aria-hidden="true"></span><span class="maplibre-location-marker-label">${location.name}</span>`;
   markerButton.addEventListener("pointerdown", (event) => {
     event.stopPropagation();
@@ -671,7 +671,7 @@ export function MapLibreWeatherMap({
 
       {mapStatus !== "ready" ? (
         <div className="absolute bottom-3 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100">
-          {mapStatus === "loading" ? "Loading map..." : `Map fallback active${mapErrorMessage ? `: ${mapErrorMessage}` : "."}`}
+          {mapStatus === "loading" ? "지도 불러오는 중" : `대체 지도 표시 중${mapErrorMessage ? `: ${mapErrorMessage}` : ""}`}
         </div>
       ) : null}
 
@@ -681,34 +681,34 @@ export function MapLibreWeatherMap({
             type="button"
             onClick={onToggleWeatherOverlay}
             aria-pressed={isWeatherOverlayVisible}
-            aria-label={isWeatherOverlayVisible ? "Hide weather overlay" : "Show weather overlay"}
+            aria-label={isWeatherOverlayVisible ? "날씨 오버레이 숨기기" : "날씨 오버레이 보기"}
             className={`inline-flex h-10 items-center justify-center rounded-md border px-3 text-xs font-semibold shadow-sm backdrop-blur transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 ${
               isWeatherOverlayVisible
                 ? "border-cyan-500/70 bg-cyan-950/88 text-cyan-50 hover:bg-cyan-900 dark:border-cyan-300/50 dark:bg-cyan-300 dark:text-slate-950 dark:hover:bg-cyan-200"
                 : "border-slate-200 bg-white/92 text-slate-900 hover:bg-white dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
             }`}
           >
-            Weather
+            날씨
           </button>
           {onRefreshWeatherOverlay ? (
             <button
               type="button"
               onClick={onRefreshWeatherOverlay}
               disabled={isWeatherOverlayLoading}
-              aria-label="Refresh realtime weather overlay"
+              aria-label="실시간 날씨 오버레이 새로고침"
               className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
             >
-              {isWeatherOverlayLoading ? "Refreshing" : "Refresh"}
+              {isWeatherOverlayLoading ? "갱신 중" : "새로고침"}
             </button>
           ) : null}
         </div>
       ) : null}
 
-      <div className="absolute left-3 top-48 z-20 flex flex-wrap gap-2 md:left-4 md:top-[31rem]">
+      <div className="absolute left-3 top-48 z-20 flex flex-wrap items-center gap-2 md:left-4 md:top-[31rem]">
         <button
           type="button"
           onClick={() => mapRef.current?.zoomIn()}
-          aria-label="Zoom map in"
+          aria-label="지도 확대"
           className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 font-mono text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
         >
           +
@@ -716,7 +716,7 @@ export function MapLibreWeatherMap({
         <button
           type="button"
           onClick={() => mapRef.current?.zoomOut()}
-          aria-label="Zoom map out"
+          aria-label="지도 축소"
           className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 font-mono text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
         >
           -
@@ -724,15 +724,15 @@ export function MapLibreWeatherMap({
         <button
           type="button"
           onClick={() => mapRef.current?.flyTo({ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM, essential: true })}
-          aria-label="Reset map view"
+          aria-label="지도 위치 초기화"
           className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-xs font-semibold text-slate-900 shadow-sm backdrop-blur transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100 dark:hover:bg-slate-900"
         >
-          Reset
+          초기화
         </button>
         {weatherOverlayStatusLabel ? (
           <div
             role="status"
-            className="min-h-10 rounded-md border border-slate-200 bg-white/92 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-slate-200 bg-white/92 px-3 text-center text-xs font-semibold leading-none text-slate-700 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/84 dark:text-slate-100"
           >
             {weatherOverlayStatusLabel}
           </div>

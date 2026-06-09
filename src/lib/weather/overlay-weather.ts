@@ -32,7 +32,7 @@ export function getWeatherFromOverlayPoint(point: WeatherOverlayPoint): WeatherD
     condition: point.condition,
     description:
       point.description ??
-      `${point.label} realtime weather is normalized from the overlay feed.`,
+      `${point.label}의 실시간 날씨를 오버레이 데이터에서 정리했습니다.`,
     updatedAt: point.updatedAt,
     sourceLabel,
   };

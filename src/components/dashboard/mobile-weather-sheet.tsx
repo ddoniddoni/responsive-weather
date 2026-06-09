@@ -2,6 +2,7 @@ import { WeatherMetricCard } from "@/components/weather/weather-metric-card";
 import { WeatherInsightStrip } from "@/components/weather/weather-insight-strip";
 import { WeatherReactiveButton } from "@/components/weather/weather-reactive-button";
 import { getWeatherInsights } from "@/lib/weather/weather-insights";
+import type { WeatherCondition } from "@/types/weather";
 import type { WeatherData } from "@/types/weather-data";
 
 type MobileWeatherSheetProps = {
@@ -11,11 +12,21 @@ type MobileWeatherSheetProps = {
   onToggleOpen: () => void;
 };
 
+const WEATHER_CONDITION_LABEL_MAP: Record<WeatherCondition, string> = {
+  sunny: "맑음",
+  rainy: "비",
+  cloudy: "흐림",
+  snowy: "눈",
+  stormy: "폭풍",
+  foggy: "안개",
+  unknown: "확인 중",
+};
+
 function getWeatherSummary(weather: WeatherData | null) {
   if (!weather) {
     return {
-      title: "Select a location",
-      subtitle: "Search or tap the map to inspect weather.",
+      title: "위치를 선택하세요",
+      subtitle: "검색하거나 지도를 눌러 날씨를 확인하세요.",
       temperatureText: "--",
     };
   }
@@ -37,31 +48,31 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
   const metricCards = weather
     ? [
         {
-          label: "Temperature",
+          label: "기온",
           value: `${weather.temperature}\u00b0C`,
-          helperText: "Current air temperature",
+          helperText: "현재 기온",
         },
         {
-          label: "Feels like",
+          label: "체감",
           value: `${weather.feelsLike}\u00b0C`,
-          helperText: "Perceived outdoor temperature",
+          helperText: "체감 온도",
         },
         {
-          label: "Humidity",
+          label: "습도",
           value: `${weather.humidity}%`,
-          helperText: "Moisture in the air",
+          helperText: "공기 중 습도",
         },
         {
-          label: "Wind",
+          label: "바람",
           value: `${weather.windSpeed} m/s`,
-          helperText: "Surface wind speed",
+          helperText: "지표면 풍속",
         },
       ]
     : [];
 
   return (
     <section
-      aria-label="Mobile weather detail"
+      aria-label="모바일 날씨 상세"
       className="absolute bottom-20 left-3 right-3 z-40 md:hidden"
     >
       <div className="overflow-hidden rounded-md border border-white/75 bg-white/95 shadow-2xl shadow-slate-950/22 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/92">
@@ -71,7 +82,7 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
         <div className="flex min-h-20 items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-              Weather Detail
+              날씨 상세
             </p>
             <h2 className="mt-1 truncate text-base font-semibold text-slate-950 dark:text-slate-100">
               {summary.title}
@@ -88,7 +99,7 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
               type="button"
               aria-expanded={isOpen}
               aria-controls="mobile-weather-sheet-body"
-              aria-label={isOpen ? "Collapse weather details" : "Expand weather details"}
+              aria-label={isOpen ? "날씨 상세 접기" : "날씨 상세 펼치기"}
               onClick={onToggleOpen}
               className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-sm font-bold text-slate-900 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
             >
@@ -104,14 +115,14 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-                      Updated
+                      업데이트
                     </p>
                     <p className="mt-1 font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {updatedAt}
                     </p>
                   </div>
                   <WeatherReactiveButton condition={weather.condition} theme={theme}>
-                    {weather.condition}
+                    {WEATHER_CONDITION_LABEL_MAP[weather.condition]}
                   </WeatherReactiveButton>
                 </div>
                 <p className="mt-4 break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -135,7 +146,7 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
               </>
             ) : (
               <p className="break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Search for a country or tap the map to show local weather details here.
+                국가를 검색하거나 지도를 눌러 이곳에서 지역 날씨를 확인하세요.
               </p>
             )}
           </div>

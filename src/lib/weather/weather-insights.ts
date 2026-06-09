@@ -16,7 +16,7 @@ function getComfortSignal(weather: WeatherData) {
   }
 
   if (Math.abs(weather.temperature - weather.feelsLike) >= 3) {
-    return "체감차 큼";
+    return "체감 차이";
   }
 
   return "안정적";

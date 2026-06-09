@@ -50,15 +50,15 @@ export function WeatherMetricCard({ condition, label, value, helperText, theme }
   const mutedTextClassName = theme === "dark" ? "text-slate-400" : "text-slate-500";
 
   return (
-    <div className={`min-h-28 rounded-lg border p-4 ${weatherTheme.surfaceClassName}`}>
+    <div className={`min-h-20 rounded-md border p-3 ${weatherTheme.surfaceClassName}`}>
       <div className="flex items-center gap-2">
-        <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${weatherTheme.accentClassName}`} />
-        <dt className={`text-xs font-semibold uppercase tracking-[0.12em] ${mutedTextClassName}`}>{label}</dt>
+        <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${weatherTheme.accentClassName}`} />
+        <dt className={`text-[11px] font-bold tracking-[0.06em] ${mutedTextClassName}`}>{label}</dt>
       </div>
-      <dd className="mt-3 font-mono text-2xl font-semibold leading-none tracking-normal text-slate-950 dark:text-slate-100">
+      <dd className="mt-2 font-mono text-xl font-semibold leading-none tracking-normal text-slate-950 dark:text-slate-100">
         {value}
       </dd>
-      <p className={`mt-3 text-xs leading-5 ${mutedTextClassName}`}>{helperText}</p>
+      <p className={`mt-2 line-clamp-2 text-[11px] leading-4 ${mutedTextClassName}`}>{helperText}</p>
     </div>
   );
 }

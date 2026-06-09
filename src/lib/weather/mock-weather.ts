@@ -9,7 +9,7 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     pressureHpa: 1016,
     visibilityKm: 14,
     condition: "cloudy",
-    description: "Cloud cover is steady with a light coastal breeze across the region.",
+    description: "구름이 넓게 깔려 있고 해안 쪽으로 약한 바람이 불고 있습니다.",
   },
   USA: {
     temperature: 28,
@@ -19,7 +19,7 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     pressureHpa: 1019,
     visibilityKm: 18,
     condition: "sunny",
-    description: "Clear and dry conditions are supporting strong daytime visibility.",
+    description: "맑고 건조한 날씨로 낮 동안 시야가 매우 좋습니다.",
   },
   JPN: {
     temperature: 19,
@@ -29,7 +29,7 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     pressureHpa: 1008,
     visibilityKm: 7,
     condition: "rainy",
-    description: "A light rain band is moving through with elevated humidity.",
+    description: "약한 비구름대가 지나가며 습도가 높게 유지되고 있습니다.",
   },
   FRA: {
     temperature: 17,
@@ -39,7 +39,7 @@ const WEATHER_DATA_BY_COUNTRY: Record<string, Omit<WeatherData, "countryCode" | 
     pressureHpa: 1012,
     visibilityKm: 10,
     condition: "cloudy",
-    description: "Cooler air and layered clouds are keeping conditions subdued.",
+    description: "선선한 공기와 층운이 이어지며 차분한 날씨입니다.",
   },
 };
 
@@ -55,7 +55,7 @@ const WEATHER_DATA_BY_REGION: Record<
     pressureHpa: 1018,
     visibilityKm: 17,
     condition: "sunny",
-    description: "Clear regional weather with dry air and bright skies.",
+    description: "건조한 공기와 밝은 하늘이 이어지는 맑은 지역 날씨입니다.",
   },
   "USA:US-NY": {
     temperature: 18,
@@ -65,7 +65,7 @@ const WEATHER_DATA_BY_REGION: Record<
     pressureHpa: 1011,
     visibilityKm: 11,
     condition: "cloudy",
-    description: "Cloud cover is building across the selected region.",
+    description: "선택한 지역 전반에 구름이 점차 늘고 있습니다.",
   },
   "JPN:JP-13": {
     temperature: 20,
@@ -75,7 +75,7 @@ const WEATHER_DATA_BY_REGION: Record<
     pressureHpa: 1009,
     visibilityKm: 8,
     condition: "rainy",
-    description: "Light rain is moving through the selected prefecture.",
+    description: "선택한 지역에 약한 비가 지나가고 있습니다.",
   },
   "KOR:KR-11": {
     temperature: 22,
@@ -85,7 +85,7 @@ const WEATHER_DATA_BY_REGION: Record<
     pressureHpa: 1014,
     visibilityKm: 13,
     condition: "cloudy",
-    description: "Soft clouds and mild wind are shaping the regional weather.",
+    description: "부드러운 구름과 약한 바람이 지역 날씨를 만들고 있습니다.",
   },
 };
 
@@ -97,7 +97,7 @@ const DEFAULT_WEATHER: Omit<WeatherData, "countryCode" | "countryName"> = {
   pressureHpa: 1013,
   visibilityKm: 12,
   condition: "unknown",
-  description: "Detailed mock weather for this location is being prepared.",
+  description: "이 위치의 상세 예시 날씨 데이터를 준비하고 있습니다.",
 };
 
 export function getMockWeatherByCountry(countryCode: string, countryName: string): WeatherData {
@@ -148,6 +148,6 @@ function getRegionFallbackWeather(
     pressureHpa,
     visibilityKm,
     condition,
-    description: `${regionName} regional mock weather is ready for panel preview.`,
+    description: `${regionName} 지역 예시 날씨를 확인할 수 있습니다.`,
   };
 }

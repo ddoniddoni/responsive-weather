@@ -33,6 +33,18 @@ function formatOverlayUpdatedAt(updatedAt: string | null) {
   }).format(updatedDate);
 }
 
+function formatWeatherOverlaySource(source: string) {
+  if (source === "open-meteo") {
+    return "Open-Meteo";
+  }
+
+  if (source === "mock") {
+    return "예시 데이터";
+  }
+
+  return source;
+}
+
 function getCoordinateDistance(
   firstCoordinates: [number, number],
   secondCoordinates: [number, number],
@@ -110,17 +122,17 @@ export function WeatherDashboard() {
     return getMockWeatherByCountry(selectedCountry.code, selectedCountry.name);
   }, [activeOverlayPoint, selectedCountry, selectedRegion]);
 
-  const selectedLabel = weather?.regionName ?? weather?.countryName ?? "Search or select a country";
+  const selectedLabel = weather?.regionName ?? weather?.countryName ?? "국가 또는 도시 검색";
   const formattedWeatherOverlayUpdatedAt = formatOverlayUpdatedAt(weatherOverlay.updatedAt);
   const visibleWeatherOverlayStatusLabel =
     isWeatherOverlayVisible && weatherOverlay.loadStatus === "loading"
-      ? "Refreshing realtime weather..."
+      ? "실시간 날씨 갱신 중"
       : isWeatherOverlayVisible && weatherOverlay.loadStatus === "error"
-        ? "Realtime unavailable. Showing mock overlay."
+        ? "실시간 연결 실패. 예시 데이터 표시 중"
         : isWeatherOverlayVisible && weatherOverlay.loadStatus === "empty"
-          ? "No realtime overlay points available."
+          ? "표시할 실시간 지점 없음"
           : isWeatherOverlayVisible && formattedWeatherOverlayUpdatedAt
-            ? `${weatherOverlay.source} updated ${formattedWeatherOverlayUpdatedAt}`
+            ? `${formatWeatherOverlaySource(weatherOverlay.source)} ${formattedWeatherOverlayUpdatedAt} 갱신`
             : null;
 
   function handleSelectCountry(country: SelectedCountry) {
@@ -207,7 +219,7 @@ export function WeatherDashboard() {
       />
 
       {weather ? (
-        <div className="absolute right-4 top-28 z-20 hidden w-[390px] max-w-[calc(100vw-2rem)] min-w-0 md:block">
+        <div className="absolute bottom-24 right-4 top-24 z-20 hidden w-[330px] max-w-[calc(100vw-2rem)] min-w-0 md:block lg:w-[340px]">
           <WeatherDetailPanel
             weather={weather}
             theme={theme}
