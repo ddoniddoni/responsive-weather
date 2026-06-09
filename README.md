@@ -1,59 +1,22 @@
 # Responsive Weather
 
-Responsive Weather는 세계지도 위에 실시간 날씨 신호를 시각적으로 표현하고, 선택한 위치의 상세 날씨를 확인하는 Next.js 애플리케이션입니다.
+평면 세계지도 위에서 지역별 현재 날씨를 탐색하는 반응형 날씨 대시보드입니다.
 
-제품 방향은 Windy처럼 **평면 지도 위에 날씨 레이어를 올리는 인터랙티브 날씨 지도**입니다. 지구본 회전 경험은 제거하고, 사용자는 지도를 이동하거나 확대/축소하면서 전 세계 대표 지점의 현재 날씨를 빠르게 살펴볼 수 있습니다.
-
-## 현재 방향
-
-- 평면 세계지도 기반 날씨 탐색
-- Open-Meteo 현재 날씨 데이터 기반 대표 지점 오버레이
-- 날씨 레이어 선택
-- 시간 선택 타임라인
-- 국가 또는 대표 지점 선택 시 오른쪽 상세 패널 표시
-- 모바일에서는 하단 시트로 상세 날씨 표시
-- 다크/라이트 모드 전환
+처음에는 단순한 세계지도와 날씨 패널에서 출발했지만, 현재는 Windy와 비슷한 방향의 **지도 중심 날씨 탐색 경험**을 목표로 정리되어 있습니다. 지도 이동, 확대/축소, 날씨 레이어 전환, 대표 지역의 실시간 날씨 오버레이, 선택 지역 상세 패널을 한 화면 안에서 사용할 수 있습니다.
 
 ## 주요 기능
 
-- 세계지도 이동, 확대, 축소, Reset
-- 대표 좌표 기반 실시간 날씨 마커 표시
-- Weather 토글로 오버레이 켜기/끄기
-- 국가 선택 및 지역 상세 모드 진입
-- 선택 위치 상세 날씨 패널 닫기
-- 기온, 체감 온도, 강수량, 레이더, 바람, 구름, 기압, 습도 레이어 전환
-- Open-Meteo 요청 실패 시 mock 오버레이 데이터 fallback
-
-## 화면 구성
-
-- `상단 바`: 브랜드, 위치 검색, 테마 전환을 담당합니다.
-- `세계지도`: 국가 선택, 지도 이동/확대/축소, 대표 날씨 오버레이 마커를 담당합니다.
-- `왼쪽 레이어 섹션`: 날씨 레이어를 전환합니다.
-- `지도 컨트롤`: `+`, `-`, `Reset` 버튼으로 지도 확대/축소와 초기화를 수행합니다.
-- `Weather 토글`: 지도 날씨 오버레이를 켜고 끕니다.
-- `오른쪽 상세 패널`: 선택한 국가 또는 지점의 현재 날씨를 표시하며, 닫기 버튼으로 선택 상태를 해제합니다.
-- `하단 타임라인`: 예보 시간대를 선택합니다.
-- `모바일 시트`: 모바일 화면에서 선택 날씨 상세 정보를 표시합니다.
-
-## 실시간 오버레이 데이터 흐름
-
-```txt
-대표 날씨 지점
--> Open-Meteo 현재 날씨 요청
--> normalizeWeather()
--> WeatherOverlayPoint[]
--> 평면 지도 오버레이 마커
--> 마커 또는 국가 선택 시 기존 날씨 상세 패널 표시
-```
-
-오버레이 작업 기준:
-
-- 오버레이는 사용자가 볼 수 있는 토글로 제어합니다.
-- 모든 국가와 지역의 날씨를 계속 요청하지 않습니다.
-- API 응답은 UI에서 직접 사용하지 않고 앱 내부 데이터로 정규화합니다.
-- 상세한 날씨 값은 오른쪽 패널 또는 모바일 시트에서 표시합니다.
-- 마커는 색상만으로 상태를 전달하지 않고 아이콘, 라벨, 접근성 라벨을 함께 사용합니다.
-- API 연결이 실패하면 기존 mock 오버레이 데이터로 지도 탐색을 유지합니다.
+- MapLibre 기반 평면 세계지도
+- 지도 드래그, 확대, 축소, 초기화
+- 대표 지역 날씨 오버레이 표시
+- 날씨 오버레이 켜기/끄기
+- Open-Meteo 기반 현재 날씨 데이터 연동
+- API 실패 시 mock 데이터 fallback
+- 온도, 체감온도, 강수, 레이더, 바람, 구름, 기압, 습도 레이어 전환
+- 국가 또는 대표 지점 선택 시 상세 날씨 패널 표시
+- 모바일 화면용 하단 날씨 시트
+- 라이트/다크 모드 전환
+- 검색창을 통한 주요 지역 선택
 
 ## 기술 스택
 
@@ -61,20 +24,25 @@ Responsive Weather는 세계지도 위에 실시간 날씨 신호를 시각적�
 - React 19
 - TypeScript
 - Tailwind CSS
+- MapLibre GL
 - React Simple Maps
-- d3-geo
+- Open-Meteo API
 - npm
 
-## 로컬 실행
+## 실행 방법
 
 ```bash
 npm install
 npm run dev
 ```
 
-브라우저에서 `http://localhost:3000`을 엽니다.
+브라우저에서 다음 주소를 엽니다.
 
-Windows PowerShell에서 실행 정책 때문에 `npm run ...`이 막히면 `npm.cmd`를 사용합니다.
+```txt
+http://localhost:3000
+```
+
+Windows PowerShell에서 실행 정책 문제로 `npm run ...` 명령이 막히면 다음처럼 실행할 수 있습니다.
 
 ```bash
 npm.cmd run dev
@@ -82,72 +50,86 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-## 검증
+## 검증 명령어
 
 ```bash
 npm run lint
 npm run build
 ```
 
-PowerShell에서는 다음 명령을 사용할 수 있습니다.
-
-```bash
-npm.cmd run lint
-npm.cmd run build
-```
-
 ## 프로젝트 구조
 
-- `src/app/`: App Router 페이지와 루트 레이아웃
-- `src/components/dashboard/`: 지도 중심 대시보드 조합 컴포넌트
-- `src/components/map/`: 세계지도, 국가 선택, 지역 지도, 오버레이 마커 컴포넌트
-- `src/components/weather/`: 날씨 상세 패널과 날씨 반응형 UI 컴포넌트
-- `src/constants/`: 날씨 레이어, 예보 시간, 대표 오버레이 지점 상수
-- `src/lib/weather/`: mock 날씨 데이터, Open-Meteo 연동, 날씨 인사이트 로직
-- `src/types/`: 공통 TypeScript 타입
-- `steps/`: Step 기반 작업 계획과 구현 기록
+```txt
+src/
+  app/
+    api/
+    layout.tsx
+    page.tsx
+    globals.css
+  components/
+    dashboard/
+    map/
+    weather/
+  constants/
+  hooks/
+  lib/
+    map/
+    weather/
+  types/
+steps/
+```
 
-## 현재 상태
+### 주요 폴더
 
-- Step 001에서 실시간 날씨 오버레이 요구사항을 재정의했습니다.
-- Step 002에서 mock 대표 지점 오버레이, 브랜드 정렬, 폰트, 테마 토글, 패널 닫기 흐름을 구현했습니다.
-- Step 003에서 Open-Meteo 현재 날씨 기반 오버레이 API 라우트와 클라이언트 로딩 상태를 연결했습니다.
-- Step 004에서 지구본을 제거하고 평면 세계지도 기반 날씨 오버레이로 전환했습니다.
-- Step 005에서 오버레이 마커 선택 시 오른쪽 상세 패널이 Open-Meteo 기반 값을 사용하도록 연결했습니다.
-- Step 006에서 오버레이 갱신 시간 표시와 수동 새로고침 버튼을 추가했습니다.
-- Step 007에서 오버레이 데이터 로딩과 새로고침 상태를 `useWeatherOverlay` 훅으로 분리했습니다.
-- Step 008에서 모바일 저줌 상태의 오버레이 마커 밀도를 낮추고 compact 표시를 추가했습니다.
-- Step 009에서 국가/검색 선택 시 매칭되는 대표 오버레이 지점의 Open-Meteo 값을 재사용하도록 연결했습니다.
-- Step 010에서 상세 패널에 Open-Meteo, mock overlay, mock preview 출처 라벨을 표시했습니다.
-- Step 011에서 상세 패널의 깨진 주요 copy와 aria label을 읽을 수 있는 문구로 정리했습니다.
-- Step 012에서 지도 컨트롤과 상태 메시지의 깨진 copy/aria label을 정리했습니다.
-- 일반 국가/지역 선택은 아직 mock 날씨 데이터를 fallback으로 사용합니다.
-- 인증, 저장 위치, 사용자 계정, 결제 기능은 없습니다.
+- `src/app`: Next.js App Router 페이지와 API Route
+- `src/components/dashboard`: 전체 날씨 대시보드 조합 컴포넌트
+- `src/components/map`: 지도, 지도 오버레이, 마커 관련 컴포넌트
+- `src/components/weather`: 상세 날씨 패널과 날씨 UI 컴포넌트
+- `src/constants`: 검색 지역, 날씨 레이어, 오버레이 기준 지점
+- `src/hooks`: 날씨 오버레이 데이터 로딩 훅
+- `src/lib/weather`: Open-Meteo 연동, mock 데이터, 날씨 데이터 변환 로직
+- `src/types`: 공통 TypeScript 타입
+- `steps`: Step 기반 작업 기록
 
-## Step 013 Update
+## 데이터 흐름
 
-- Added user-location camera focus with a visible Locate control and status text.
-- Raised the minimum map zoom so the weather map does not collapse into a full-world overview.
-- Wrapped longitude values and rendered side world copies to make horizontal panning feel continuous.
+```txt
+대표 날씨 지점
+-> Open-Meteo 현재 날씨 요청
+-> 앱 내부 WeatherOverlayPoint 형태로 정규화
+-> 지도 위 오버레이 레이어 표시
+-> 사용자가 지점 선택
+-> 상세 날씨 패널 또는 모바일 시트 표시
+```
 
-## Step 014 Update
+Open-Meteo 요청이 실패하면 앱은 mock 데이터를 사용해 화면이 비어 보이지 않도록 처리합니다.
 
-- Added a lightweight heatmap-style SVG layer that changes with the selected weather layer.
-- Extended Open-Meteo overlay data with current precipitation.
-- Cleaned weather layer labels so temperature, feels-like, precipitation, radar, wind, clouds, pressure, and humidity controls are readable.
+## 현재 완성 범위
 
-## Step 015 Update
+현재 프로젝트는 포트폴리오용 MVP 수준으로 다음 범위까지 구현되어 있습니다.
 
-- Repeated heat spots and compact weather markers across the wrapped side map copies.
-- Kept wrapped marker copies visual-only so keyboard and click interaction stay on the primary map.
+- 한 화면 중심의 날씨 지도 UI
+- 지도 기반 탐색과 상세 패널 연결
+- 실시간 날씨 오버레이의 기본 데이터 흐름
+- 반응형 데스크톱/모바일 레이아웃
+- 다크/라이트 테마
+- API 실패 fallback
+- Step 기반 개발 기록
 
-## Step 016 Update
+## 남은 개선 여지
 
-- Added Windy-like map camera deep links such as `?37.482,127.139,5`.
-- Added explicit camera query support with `?lat=37.482&lon=127.139&zoom=5`.
-- Prevented automatic browser geolocation from overriding a valid URL camera.
+프로덕션 서비스로 확장하려면 다음 작업이 더 필요합니다.
 
-## Step 017 Update
+- 지도 중복 표시와 카메라 제한의 추가 안정화
+- Windy 수준의 실제 기상 타일 레이어 연동
+- 시간대별 예보 애니메이션
+- 더 넓은 지역 검색과 자동완성
+- 현재 위치 기반 날씨
+- 테스트 코드와 E2E 검증
+- PRD/AGENTS 문서 인코딩 복구
 
-- Cleaned remaining dashboard copy in the top bar search, mobile weather sheet, and forecast timeline.
-- Preserved search keyboard navigation, mobile sheet expansion, and timeline controls.
+## 프로젝트 상태
+
+이 저장소는 날씨 지도 대시보드 포트폴리오 프로젝트입니다.
+
+현재 작업 기준 브랜치는 `windy-map-stabilization`이며, 최근 불필요하게 쪼개졌던 Step 브랜치는 정리했습니다. 이후 작업을 이어간다면 지도 안정화와 실제 날씨 레이어 품질 개선을 우선순위로 두는 것이 좋습니다.
