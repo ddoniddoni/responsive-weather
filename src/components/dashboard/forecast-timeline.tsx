@@ -6,7 +6,7 @@ type ForecastTimelineProps = {
 
 export function ForecastTimeline({ activeTime, times, onSelectTime }: ForecastTimelineProps) {
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-30 max-w-[100vw] overflow-hidden border-t border-white/20 bg-slate-950/76 px-3 py-2 text-white shadow-[0_-16px_40px_rgba(15,23,42,0.28)] backdrop-blur md:px-4">
+    <div className="absolute bottom-0 left-0 right-0 z-30 max-w-[100vw] overflow-hidden border-t border-white/20 bg-slate-950/80 px-3 py-2 text-white shadow-[0_-16px_40px_rgba(15,23,42,0.28)] backdrop-blur-xl md:px-4">
       <div className="mx-auto flex max-w-7xl flex-col gap-2 md:flex-row md:items-center">
         <button
           type="button"

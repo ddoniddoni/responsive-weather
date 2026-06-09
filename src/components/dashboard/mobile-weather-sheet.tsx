@@ -1,5 +1,5 @@
-import { WeatherMetricCard } from "@/components/weather/weather-metric-card";
 import { WeatherInsightStrip } from "@/components/weather/weather-insight-strip";
+import { WeatherMetricCard } from "@/components/weather/weather-metric-card";
 import { WeatherReactiveButton } from "@/components/weather/weather-reactive-button";
 import { getWeatherInsights } from "@/lib/weather/weather-insights";
 import type { WeatherCondition } from "@/types/weather";
@@ -26,7 +26,7 @@ function getWeatherSummary(weather: WeatherData | null) {
   if (!weather) {
     return {
       title: "위치를 선택하세요",
-      subtitle: "검색하거나 지도를 눌러 날씨를 확인하세요.",
+      subtitle: "검색하거나 지도 마커를 선택해 날씨를 확인하세요",
       temperatureText: "--",
     };
   }
@@ -50,39 +50,36 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
         {
           label: "기온",
           value: `${weather.temperature}\u00b0C`,
-          helperText: "현재 기온",
+          helperText: "현재 관측 기온",
         },
         {
           label: "체감",
           value: `${weather.feelsLike}\u00b0C`,
-          helperText: "체감 온도",
+          helperText: "습도와 바람을 반영",
         },
         {
           label: "습도",
           value: `${weather.humidity}%`,
-          helperText: "공기 중 습도",
+          helperText: "공기 중 수분 비율",
         },
         {
           label: "바람",
           value: `${weather.windSpeed} m/s`,
-          helperText: "지표면 풍속",
+          helperText: "지표면 기준 풍속",
         },
       ]
     : [];
 
   return (
-    <section
-      aria-label="모바일 날씨 상세"
-      className="absolute bottom-20 left-3 right-3 z-40 md:hidden"
-    >
-      <div className="overflow-hidden rounded-md border border-white/75 bg-white/95 shadow-2xl shadow-slate-950/22 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/92">
+    <section aria-label="모바일 날씨 상세" className="absolute bottom-20 left-3 right-3 z-40 md:hidden">
+      <div className="overflow-hidden rounded-lg border border-white/75 bg-white/95 shadow-2xl shadow-slate-950/22 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/92">
         <div className="flex items-center justify-center pt-2" aria-hidden="true">
           <span className="h-1 w-9 rounded-full bg-slate-300 dark:bg-slate-700" />
         </div>
         <div className="flex min-h-20 items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
-              날씨 상세
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+              Weather detail
             </p>
             <h2 className="mt-1 truncate text-base font-semibold text-slate-950 dark:text-slate-100">
               {summary.title}
@@ -109,7 +106,10 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
         </div>
 
         {isOpen ? (
-          <div id="mobile-weather-sheet-body" className="max-h-[52vh] overflow-y-auto border-t border-slate-200 px-4 py-4 dark:border-slate-800">
+          <div
+            id="mobile-weather-sheet-body"
+            className="max-h-[52vh] overflow-y-auto border-t border-slate-200 px-4 py-4 dark:border-slate-800"
+          >
             {weather ? (
               <>
                 <div className="flex items-start justify-between gap-3">
@@ -146,7 +146,7 @@ export function MobileWeatherSheet({ weather, theme, isOpen, onToggleOpen }: Mob
               </>
             ) : (
               <p className="break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
-                국가를 검색하거나 지도를 눌러 이곳에서 지역 날씨를 확인하세요.
+                국가를 검색하거나 지도 위의 날씨 마커를 선택하면 이 영역에 상세 날씨가 표시됩니다.
               </p>
             )}
           </div>

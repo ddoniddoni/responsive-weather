@@ -74,9 +74,7 @@ export function MapTopBar({
       : NO_HIGHLIGHTED_RESULT;
   const selectedLocation = searchLocations.find((location) => location.name === selectedLabel);
   const searchStatusLabel =
-    filteredLocations.length > 0
-      ? `${filteredLocations.length}개 위치`
-      : "검색 결과 없음";
+    filteredLocations.length > 0 ? `${filteredLocations.length}개 위치` : "검색 결과 없음";
 
   function handleSelectLocation(location: SearchableLocation) {
     onSelectSearchLocation(location);
@@ -130,16 +128,21 @@ export function MapTopBar({
   }
 
   return (
-    <header className="pointer-events-none absolute inset-x-3 top-3 z-30 flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] flex-col gap-2 overflow-hidden md:inset-x-4 md:w-auto md:max-w-none md:flex-row md:items-center md:justify-between md:overflow-visible">
+    <header className="pointer-events-none absolute inset-x-3 top-3 z-30 flex w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] flex-col gap-2 overflow-visible md:inset-x-4 md:w-auto md:max-w-none md:flex-row md:items-center md:justify-between">
       <div className="flex min-w-0 max-w-full flex-col gap-2 md:flex-1 md:flex-row md:items-center">
         <div className="pointer-events-auto flex items-center justify-between gap-2">
-          <div className="flex h-11 shrink-0 items-center gap-2 rounded-md border border-white/75 bg-white/95 px-3 text-slate-950 shadow-lg shadow-slate-950/12 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/88 dark:text-slate-100">
-            <div className="grid h-8 w-8 shrink-0 place-items-center rounded bg-slate-950 text-[11px] font-black leading-none text-white dark:bg-white dark:text-slate-950">
+          <div className="flex h-12 shrink-0 items-center gap-3 rounded-lg border border-white/75 bg-white/95 px-3 text-slate-950 shadow-lg shadow-slate-950/12 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/90 dark:text-slate-100">
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-slate-950 text-[11px] font-black leading-none text-white dark:bg-white dark:text-slate-950">
               RW
             </div>
-            <span className="hidden translate-y-px text-base font-bold leading-none tracking-normal min-[420px]:block">
-              Responsive Weather
-            </span>
+            <div className="hidden min-[420px]:block">
+              <span className="block translate-y-px text-sm font-bold leading-none tracking-normal">
+                Responsive Weather
+              </span>
+              <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+                Live map dashboard
+              </span>
+            </div>
           </div>
           <button
             type="button"
@@ -151,8 +154,8 @@ export function MapTopBar({
             <span className="sr-only">{themeLabel} 모드로 전환</span>
           </button>
         </div>
-        <div className="pointer-events-auto relative w-full min-w-0 max-w-full flex-1 md:max-w-[460px]">
-          <label className="flex h-11 w-full min-w-0 items-center gap-3 rounded-md border border-white/75 bg-white/95 px-3 text-sm text-slate-500 shadow-lg shadow-slate-950/12 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/88 dark:text-slate-400">
+        <div className="pointer-events-auto relative w-full min-w-0 max-w-full flex-1 md:max-w-[500px]">
+          <label className="flex h-12 w-full min-w-0 items-center gap-3 rounded-lg border border-white/75 bg-white/95 px-3 text-sm text-slate-500 shadow-lg shadow-slate-950/12 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/90 dark:text-slate-400">
             <span aria-hidden="true" className="font-mono text-base text-slate-400">
               /
             </span>
@@ -180,18 +183,18 @@ export function MapTopBar({
                 onClick={handleClearSearch}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
               >
-                x
+                ×
               </button>
             ) : null}
-            <span className="ml-auto rounded bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white dark:bg-white dark:text-slate-950">
+            <span className="ml-auto rounded-md bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white dark:bg-white dark:text-slate-950">
               검색
             </span>
           </label>
           {isSearchOpen ? (
-            <div className="absolute left-0 right-0 top-[calc(100%+0.375rem)] max-h-64 overflow-y-auto rounded-md border border-white/75 bg-white/96 p-1.5 text-sm shadow-xl shadow-slate-950/18 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/94">
+            <div className="absolute left-0 right-0 top-[calc(100%+0.375rem)] max-h-72 overflow-y-auto rounded-lg border border-white/75 bg-white/96 p-1.5 text-sm shadow-xl shadow-slate-950/18 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/94">
               <div className="flex items-center justify-between gap-3 px-2.5 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <span className="min-w-0 truncate">
-                  {selectedLocation ? `선택됨: ${selectedLocation.name}` : "위치를 선택하세요"}
+                  {selectedLocation ? `선택됨: ${selectedLocation.name}` : "도시나 국가를 검색하세요"}
                 </span>
                 <span className="shrink-0 rounded bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                   {searchStatusLabel}
@@ -210,7 +213,7 @@ export function MapTopBar({
                         onMouseDown={(event) => event.preventDefault()}
                         onMouseEnter={() => setHighlightedResultIndex(index)}
                         onClick={() => handleSelectLocation(location)}
-                        className={`flex min-h-12 w-full items-center justify-between gap-3 rounded px-3 py-2 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 ${
+                        className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 ${
                           isHighlighted
                             ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950"
                             : "text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
@@ -241,7 +244,7 @@ export function MapTopBar({
                 </div>
               ) : (
                 <div role="status" className="px-3 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
-                  현재 MVP는 대한민국, 미국, 일본, 프랑스를 지원합니다.
+                  현재 MVP는 대한민국, 미국, 일본, 프랑스를 우선 지원합니다.
                 </div>
               )}
             </div>
