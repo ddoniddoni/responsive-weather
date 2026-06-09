@@ -32,6 +32,17 @@ const BASEMAP_TILE_URLS = [
   "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
   "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
 ];
+const FALLBACK_WORLD_TILES = Array.from({ length: 8 }, (_, index) => {
+  const x = index % 4;
+  const y = Math.floor(index / 4) + 1;
+
+  return {
+    id: `2-${x}-${y}`,
+    x,
+    y: y - 1,
+    src: `https://a.basemaps.cartocdn.com/rastertiles/voyager/2/${x}/${y}@2x.png`,
+  };
+});
 
 type MapLibreWeatherMapProps = {
   activeLayerId?: WeatherLayerId;
@@ -334,6 +345,26 @@ function addWeatherLayers(map: MapLibreMap) {
   }
 }
 
+function StaticWorldBackdrop() {
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden bg-[#d8edf0]" aria-hidden="true">
+      <div className="absolute left-1/2 top-1/2 aspect-[2/1] w-[max(100vw,1024px)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-95">
+        {FALLBACK_WORLD_TILES.map((tile) => (
+          <div
+            key={tile.id}
+            className="absolute h-1/2 w-1/4 select-none bg-cover bg-center [image-rendering:auto]"
+            style={{
+              left: `${tile.x * 25}%`,
+              top: `${tile.y * 50}%`,
+              backgroundImage: `url(${tile.src})`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function MapLibreWeatherMap({
   activeLayerId = "temperature",
   selectedCountryCode,
@@ -542,6 +573,7 @@ export function MapLibreWeatherMap({
       className="maplibre-weather-map absolute inset-0 h-full min-h-full w-full min-w-0 overflow-hidden bg-slate-200 dark:bg-slate-950"
       aria-label="Interactive weather map"
     >
+      <StaticWorldBackdrop />
       <div ref={containerRef} className="absolute inset-0 z-10 h-full w-full" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04),transparent_14%,transparent_84%,rgba(15,23,42,0.06))]" />
 
