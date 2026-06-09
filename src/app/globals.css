@@ -43,15 +43,21 @@ body {
 }
 
 .maplibre-weather-map .maplibregl-map,
+.maplibre-weather-map .maplibregl-canvas-container,
 .maplibre-weather-map .maplibregl-canvas {
   background: transparent;
+  height: 100%;
+  width: 100%;
 }
 
+.maplibre-weather-map .maplibregl-canvas-container,
 .maplibre-weather-map .maplibregl-canvas {
   cursor: grab;
   pointer-events: auto;
+  touch-action: none;
 }
 
+.maplibre-weather-map .maplibregl-canvas-container:active,
 .maplibre-weather-map .maplibregl-canvas:active {
   cursor: grabbing;
 }

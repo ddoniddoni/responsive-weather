@@ -468,11 +468,25 @@ export function MapLibreWeatherMap({
       return;
     }
 
+    const mapContainer = containerRef.current;
     let map: MapLibreMap;
+    let resizeFrameId: number | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+
+    function resizeMap() {
+      if (resizeFrameId !== null) {
+        window.cancelAnimationFrame(resizeFrameId);
+      }
+
+      resizeFrameId = window.requestAnimationFrame(() => {
+        mapRef.current?.resize();
+        resizeFrameId = null;
+      });
+    }
 
     try {
       map = new maplibregl.Map({
-        container: containerRef.current,
+        container: mapContainer,
         style: MAP_STYLE,
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
@@ -490,6 +504,9 @@ export function MapLibreWeatherMap({
     mapRef.current = map;
     configureMapInteractions(map);
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+    resizeObserver = new ResizeObserver(resizeMap);
+    resizeObserver.observe(mapContainer);
+    resizeMap();
 
     map.on("error", (event) => {
       setMapStatus("error");
@@ -540,6 +557,11 @@ export function MapLibreWeatherMap({
     });
 
     return () => {
+      if (resizeFrameId !== null) {
+        window.cancelAnimationFrame(resizeFrameId);
+      }
+
+      resizeObserver?.disconnect();
       map.remove();
       mapRef.current = null;
     };
@@ -573,11 +595,11 @@ export function MapLibreWeatherMap({
 
   return (
     <div
-      className="maplibre-weather-map relative h-full min-h-[720px] min-w-0 overflow-hidden bg-slate-200 dark:bg-slate-950"
+      className="maplibre-weather-map absolute inset-0 h-full min-h-full w-full min-w-0 overflow-hidden bg-slate-200 dark:bg-slate-950"
       aria-label="Interactive weather map"
     >
       <StaticTileBackdrop />
-      <div ref={containerRef} className="absolute inset-0 z-10" />
+      <div ref={containerRef} className="absolute inset-0 z-10 h-full w-full" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.18),transparent_18%,transparent_78%,rgba(15,23,42,0.2))]" />
 
       {mapStatus !== "ready" ? (
