@@ -2,6 +2,7 @@
 
 import maplibregl, {
   type GeoJSONSource,
+  type LngLatBoundsLike,
   type MapGeoJSONFeature,
   type MapLayerMouseEvent,
   type Map as MapLibreMap,
@@ -14,6 +15,12 @@ import type { SelectedCountry, WeatherOverlayPoint } from "@/types/weather-data"
 
 const DEFAULT_CENTER: [number, number] = [127.335, 35.815];
 const DEFAULT_ZOOM = 3.6;
+const MIN_ZOOM = 2.25;
+const MAX_ZOOM = 7.5;
+const WEATHER_MAP_BOUNDS: LngLatBoundsLike = [
+  [-180, -58],
+  [180, 82],
+];
 const WEATHER_SOURCE_ID = "weather-overlay-points";
 const SELECTED_SOURCE_ID = "selected-weather-location";
 const WEATHER_HEAT_LAYER_ID = "weather-heat-layer";
@@ -490,6 +497,10 @@ export function MapLibreWeatherMap({
         style: MAP_STYLE,
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
+        minZoom: MIN_ZOOM,
+        maxZoom: MAX_ZOOM,
+        maxBounds: WEATHER_MAP_BOUNDS,
+        renderWorldCopies: false,
         attributionControl: false,
         interactive: true,
       });
@@ -533,7 +544,11 @@ export function MapLibreWeatherMap({
           return;
         }
 
-        map.flyTo({ center: [point.longitude, point.latitude], zoom: Math.max(map.getZoom(), 5.2), essential: true });
+        map.flyTo({
+          center: [point.longitude, point.latitude],
+          zoom: Math.min(MAX_ZOOM, Math.max(map.getZoom(), 5.2)),
+          essential: true,
+        });
 
         if (onSelectWeatherOverlayPointRef.current) {
           onSelectWeatherOverlayPointRef.current(point);
@@ -581,7 +596,11 @@ export function MapLibreWeatherMap({
     selectedSource?.setData(selectedFeatureCollection);
 
     if (selectedCountryCoordinates) {
-      map?.flyTo({ center: selectedCountryCoordinates, zoom: Math.max(map.getZoom(), 5.2), essential: true });
+      map?.flyTo({
+        center: selectedCountryCoordinates,
+        zoom: Math.min(MAX_ZOOM, Math.max(map.getZoom(), 5.2)),
+        essential: true,
+      });
     }
   }, [selectedCountryCoordinates, selectedFeatureCollection]);
 
