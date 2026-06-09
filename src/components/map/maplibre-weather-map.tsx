@@ -266,6 +266,17 @@ function setOverlayLayerVisibility(map: MapLibreMap, isVisible: boolean) {
   });
 }
 
+function configureMapInteractions(map: MapLibreMap) {
+  map.dragPan.enable();
+  map.scrollZoom.enable();
+  map.touchZoomRotate.enable();
+  map.keyboard.enable();
+  map.boxZoom.enable();
+  map.doubleClickZoom.enable();
+  map.dragRotate.disable();
+  map.touchZoomRotate.disableRotation();
+}
+
 function addWeatherLayers(map: MapLibreMap) {
   if (!map.getSource(WEATHER_SOURCE_ID)) {
     map.addSource(WEATHER_SOURCE_ID, {
@@ -466,6 +477,7 @@ export function MapLibreWeatherMap({
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
         attributionControl: false,
+        interactive: true,
       });
     } catch (error) {
       window.setTimeout(() => {
@@ -476,6 +488,7 @@ export function MapLibreWeatherMap({
     }
 
     mapRef.current = map;
+    configureMapInteractions(map);
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
     map.on("error", (event) => {
@@ -486,6 +499,7 @@ export function MapLibreWeatherMap({
     map.on("load", () => {
       setMapStatus("ready");
       setMapErrorMessage(null);
+      map.resize();
       addWeatherLayers(map);
       const weatherSource = map.getSource(WEATHER_SOURCE_ID) as GeoJSONSource | undefined;
       const selectedSource = map.getSource(SELECTED_SOURCE_ID) as GeoJSONSource | undefined;

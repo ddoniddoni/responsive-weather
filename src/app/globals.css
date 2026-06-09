@@ -47,6 +47,15 @@ body {
   background: transparent;
 }
 
+.maplibre-weather-map .maplibregl-canvas {
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.maplibre-weather-map .maplibregl-canvas:active {
+  cursor: grabbing;
+}
+
 .theme-toggle-button {
   display: inline-flex;
   height: 44px;
